@@ -1,1 +1,1 @@
-# downstall
+# script for auto-downloading and auto-installation of applications with сurrent versions
