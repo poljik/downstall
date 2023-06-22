@@ -1,5 +1,12 @@
 [
   {
+    "Pattern": "AcroReadDC_*.7z",
+    "Dir": "soft/adobe_reader",
+    "Name": "adobe_reader",
+    "Url": "https://disk.yandex.ru/d/Tiv4LafhAg59bw",
+    "Arg": "/quiet /norestart"
+  },
+  {
     "Pattern": "Office_*_2016_*.exe",
     "Dir": "soft/office_2016",
     "Name": "office_2016",
@@ -32,13 +39,6 @@
     "Name": "true_image",
     "Url": "",
     "Arg": "/S /Q"
-  },
-  {
-    "Pattern": "AcroReadDC_*.7z",
-    "Dir": "soft/adobe_reader",
-    "Name": "adobe_reader",
-    "Url": "",
-    "Arg": "/quiet /norestart"
   },
   {
     "Pattern": "iview???_x64_setup.exe",
