@@ -1,24 +1,10 @@
 [
   {
-    "Pattern": "AcroReadDC_*.7z",
-    "Dir": "soft/adobe_reader",
-    "Name": "adobe_reader",
-    "Url": "https://disk.yandex.ru/d/Tiv4LafhAg59bw",
-    "Arg": "/quiet /norestart"
-  },
-  {
     "Pattern": "Office_*_2016_*.exe",
     "Dir": "soft/office_2016",
     "Name": "office_2016",
     "Url": "",
     "Arg": "-aip -gm2"
-  },
-  {
-    "Pattern": "total*commander*litepack*.exe",
-    "Dir": "soft/total_commander",
-    "Name": "total_commander",
-    "Url": "",
-    "Arg": "/S /IL"
   },
   {
     "Pattern": "screwdrivers*client*x64.msi",
@@ -28,17 +14,31 @@
     "Arg": "/quiet /norestart"
   },
   {
+    "Pattern": "ati.*.exe",
+    "Dir": "soft/true_image",
+    "Name": "true_image",
+    "Url": "",
+    "Arg": "/S /Q"
+  },
+  {
     "Pattern": "*MAS_*_Password_1234.7z",
     "Dir": "soft/activation",
     "Name": "mas",
     "Url": ""
   },
   {
-    "Pattern": "ati.*.exe",
-    "Dir": "soft/true_image",
-    "Name": "true_image",
-    "Url": "",
-    "Arg": "/S /Q"
+    "Pattern": "total_commander_1*litepack*.zip",
+    "Dir": "soft/total_commander",
+    "Name": "total_commander",
+    "Url": "https://disk.yandex.by/d/LJ5IDzP0BVFQQ",
+    "Arg": "/S /IL"
+  },
+  {
+    "Pattern": "AcroReadDC_*.7z",
+    "Dir": "soft/adobe_reader",
+    "Name": "adobe_reader",
+    "Url": "https://disk.yandex.ru/d/Tiv4LafhAg59bw",
+    "Arg": "/quiet /norestart"
   },
   {
     "Pattern": "iview???_x64_setup.exe",
