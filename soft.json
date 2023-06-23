@@ -14,17 +14,17 @@
     "Arg": "/quiet /norestart"
   },
   {
-    "Pattern": "ati.*.exe",
-    "Dir": "soft/true_image",
-    "Name": "true_image",
-    "Url": "",
-    "Arg": "/S /Q"
-  },
-  {
     "Pattern": "*MAS_*_Password_1234.7z",
     "Dir": "soft/activation",
     "Name": "mas",
     "Url": ""
+  },
+  {
+    "Pattern": "ati.*.zip",
+    "Dir": "soft/true_image",
+    "Name": "true_image",
+    "Url": "https://drive.google.com/file/d/1HbcuYD2FUsjbBJ55k9obezLewO80phWa/view?usp=sharing",
+    "Arg": "/S /Q"
   },
   {
     "Pattern": "total_commander_1*litepack*.zip",
