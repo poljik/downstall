@@ -1,44 +1,92 @@
-[
+﻿[
   {
-    "Pattern": "Office_*_2016_*.exe",
-    "Dir": "soft/office_2016",
-    "Name": "office_2016",
-    "Url": "",
-    "Arg": "-aip -gm2"
+    "Pattern": "ati.*.zip",
+    "Dir": "other/soft/true_image",
+    "Name": "true_image",
+    "Url": "https://drive.google.com/file/d/1HbcuYD2FUsjbBJ55k9obezLewO80phWa/view?usp=sharing",
+    "Arg": "/S /Q",
+    "RarArg": "-prepack.me",
+    "PatternSetup": "ATI*.exe"
   },
   {
-    "Pattern": "screwdrivers*client*x64.msi",
-    "Dir": "drivers/screw_drivers",
-    "Name": "screw_drivers",
-    "Url": "",
-    "Arg": "/quiet /norestart"
+    "Pattern": "wumt_*.zip",
+    "Dir": "soft/activation",
+    "Name": "wumt",
+    "Url": "https://drive.google.com/file/d/0BwJH2CazcjsINFZFc1pVdk9mNHM/view?usp=sharing",
+    "PatternSetup": "*wumt_x64.exe",
+    "OneExe2Desktop":true
+  },
+  {
+    "Pattern": "*vvoddpu*.zip",
+    "Dir": "by/vvoddpu",
+    "Name": "vvoddpu",
+    "Url": "https://ssf.gov.by/ru/po-fonda-ru/",
+    "Arg": "/S",
+    "PatternSetup": "vvoddpu-setup*.exe"
+  },
+  {
+    "Pattern": "*opera*setup_x64.exe",
+    "Dir": "internet/opera",
+    "Name": "opera",
+    "Url": "$operaUrl",
+    "Arg": "/silent /startmenushortcut=1 /desktopshortcut=1 /quicklaunchshortcut=1 /launchopera=0 /pintotaskbar=1"
+  },
+  {
+    "Pattern": "AutoSettingsPS_v*.zip",
+    "Dir": "admin/autosettingsps",
+    "Name": "autoSettingsPS",
+    "Url": "https://disk.yandex.by/d/CMqvcp1F3QiaWL/Windows%2010%201809%2B"
+  },
+  {
+    "Pattern": "total_commander_1*litepack*.zip",
+    "Dir": "other/soft/total_commander",
+    "Name": "total_commander",
+    "Url": "https://disk.yandex.by/d/LJ5IDzP0BVFQQ",
+    "Arg": "/S /IL",
+    "PatternSetup": "total commander*litepack*.exe"
+  },
+  {
+    "Pattern": "tsd-4*.7z",
+    "Dir": "drivers/screwdrivers",
+    "Name": "screwdrivers",
+    "Url": "https://disk.yandex.by/d/l19t3GLmftxhNg/v4",
+    "Arg": "/quiet /norestart",
+    "RarArg": "-pru-board",
+    "PatternSetup": "screwdrivers*client*x64.msi"
+  },
+  {
+    "Pattern": "*rufus-*p.exe",
+    "Dir": "admin",
+    "Name": "rufus",
+    "Url": "https://github.com/pbatard/rufus/releases/latest",
+    "OneExe2Desktop":true
+  },
+  {
+    "Pattern": "putty.exe",
+    "Dir": "admin",
+    "Name": "putty",
+    "Url": "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe",
+    "OneExe2Desktop":true
   },
   {
     "Pattern": "*MAS_*_Password_1234.7z",
     "Dir": "soft/activation",
-    "Name": "mas",
-    "Url": ""
+    "Name": "mas"
   },
   {
-    "Pattern": "ati.*.zip",
-    "Dir": "soft/true_image",
-    "Name": "true_image",
-    "Url": "https://drive.google.com/file/d/1HbcuYD2FUsjbBJ55k9obezLewO80phWa/view?usp=sharing",
-    "Arg": "/S /Q"
-  },
-  {
-    "Pattern": "total_commander_1*litepack*.zip",
-    "Dir": "soft/total_commander",
-    "Name": "total_commander",
-    "Url": "https://disk.yandex.by/d/LJ5IDzP0BVFQQ",
-    "Arg": "/S /IL"
+    "Pattern": "v64_16.0.*.cab",
+    "Dir": "soft/office365",
+    "Name": "office365",
+    "Comment":"without update function, for update setup files - delete distr and run downstall again"
   },
   {
     "Pattern": "AcroReadDC_*.7z",
     "Dir": "soft/adobe_reader",
     "Name": "adobe_reader",
     "Url": "https://disk.yandex.ru/d/Tiv4LafhAg59bw",
-    "Arg": "/quiet /norestart"
+    "Arg": "/quiet /norestart",
+    "PatternSetup": "acroread.msi",
+    "Comment": "# original Acrobat Reader: AcroRdrDC*.exe /sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES # updates: msiexec.exe /update AcroRdrDC*.msp /quiet /norestart"
   },
   {
     "Pattern": "iview???_x64_setup.exe",
@@ -58,8 +106,7 @@
     "Pattern": "irfanview_lang_russian.exe",
     "Dir": "media/irfanview",
     "Name": "irfanview_lang_russian",
-    "Url": "https://www.irfanview.net/lang/irfanview_lang_russian.exe",
-    "Arg": ""
+    "Url": "https://www.irfanview.net/lang/irfanview_lang_russian.exe"
   },
   {
     "Pattern": "Cloudflare_WARP_Release-x64.msi",
@@ -72,7 +119,9 @@
     "Pattern": "EdgeBlock.zip",
     "Dir": "soft/edgeblock",
     "Name": "edgeblock",
-    "Url": "https://www.sordum.org/files/downloads.php?st-edge-block"
+    "Url": "https://www.sordum.org/files/downloads.php?st-edge-block",
+    "PatternSetup": "*EdgeBlock_x64.exe",
+    "OneExe2Desktop":true
   },
   {
     "Pattern": "*АРМ*Плательщик*ЕАЭС*.exe",
@@ -85,7 +134,8 @@
     "Pattern": "reduced_rate_nds.zip",
     "Dir": "by/platelschik_eaes",
     "Name": "platelschik_eaes_rate",
-    "Url": "https://www.nalog.gov.by/upload/reduced_rate_nds.zip"
+    "Url": "https://www.nalog.gov.by/upload/reduced_rate_nds.zip",
+    "PatternSetup": "reduced_rate_nds.xml"
   },
   {
     "Pattern": "*firefox*setup*.msi",
@@ -127,7 +177,8 @@
     "Dir": "internet/anydesk",
     "Name": "anydesk",
     "Url": "https://download.anydesk.com/AnyDesk.exe",
-    "Arg": "--install \"C:\\Program Files (x86)\\AnyDesk\" --create-shortcuts --create-desktop-icon --silent"
+    "OneExe2Desktop":true,
+    "Comment": "arg: --install \"C:\\Program Files (x86)\\AnyDesk\" --create-shortcuts --create-desktop-icon --silent"
   },
   {
     "Pattern": "*chrome*64.msi",
@@ -137,17 +188,12 @@
     "Arg": "/quiet /norestart"
   },
   {
-    "Pattern": "*RDPWInst*.msi",
+    "Pattern": "*RDPWrap*.zip",
     "Dir": "soft/rdpwrap",
     "Name": "rdpwrap",
     "Url": "https://github.com/stascorp/rdpwrap/releases/latest",
-    "Arg": "/quiet /norestart"
-  },
-  {
-    "Pattern": "*RDPWrap*.zip",
-    "Dir": "soft/rdpwrap",
-    "Name": "rdpwrap_zip",
-    "Url": "https://github.com/stascorp/rdpwrap/releases/latest"
+    "Arg": "-i -o",
+    "PatternSetup": "*RDPWInst.exe"
   },
   {
     "Pattern": "rdpwrap.ini",
@@ -159,7 +205,9 @@
     "Pattern": "*winscan2pdf_portable.zip",
     "Dir": "other/soft/winscan2pdf",
     "Name": "winscan2pdf",
-    "Url": "https://softwareok.com/Download/WinScan2PDF_Portable.zip"
+    "Url": "https://softwareok.com/Download/WinScan2PDF_Portable.zip",
+    "PatternSetup": "*WinScan2PDF_p.exe",
+    "OneExe2Desktop":true
   },
   {
     "Pattern": "*ZeroTier*.msi",
@@ -172,19 +220,23 @@
     "Pattern": "*vc_redist*x86*.exe",
     "Dir": "soft",
     "Name": "vc_redistx86",
-    "Url": "https://docs.microsoft.com/ru-RU/cpp/windows/latest-supported-vc-redist?view=msvc-170"
+    "Url": "https://docs.microsoft.com/ru-RU/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+    "Arg": "/quiet"
   },
   {
     "Pattern": "*vc_redist*x64*.exe",
     "Dir": "soft",
     "Name": "vc_redistx64",
-    "Url": "https://docs.microsoft.com/ru-RU/cpp/windows/latest-supported-vc-redist?view=msvc-170"
+    "Url": "https://docs.microsoft.com/ru-RU/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+    "Arg": "/quiet"
   },
   {
     "Pattern": "*ookla-speedtest*win64.zip",
     "Dir": "other/internet/speedtest",
     "Name": "speedtest",
-    "Url": "https://www.speedtest.net/apps/cli"
+    "Url": "https://www.speedtest.net/apps/cli",
+    "PatternSetup": "*speedtest.exe",
+    "OneExe2Desktop":true
   },
   {
     "Pattern": "*Imagine_*_x64_Unicode.exe",
@@ -226,13 +278,6 @@
     "Arg": "/quiet /norestart"
   },
   {
-    "Pattern": "*vvoddpu*.zip",
-    "Dir": "by/vvoddpu",
-    "Name": "vvoddpu",
-    "Url": "https://ssf.gov.by/ru/po-fonda-ru/",
-    "Arg": "/S"
-  },
-  {
     "Pattern": "*EDeclaration*(Include_JRE).exe",
     "Dir": "by/edeclaration",
     "Name": "edeclaration",
@@ -243,7 +288,8 @@
     "Pattern": "*AvPKISetup*bel*.zip",
     "Dir": "by/edeclaration",
     "Name": "avest",
-    "Url": "https://www.avest.by/crypto/csp.htm"
+    "Url": "https://www.avest.by/crypto/csp.htm",
+    "PatternSetup": "AvPKISetup*.exe"
   },
   {
     "Pattern": "*wireguard-amd64*.msi",
@@ -277,7 +323,9 @@
     "Pattern": "*syncthing*windows-amd64*.zip",
     "Dir": "other/internet/syncthing",
     "Name": "syncthing",
-    "Url": "https://syncthing.net/downloads/"
+    "Url": "https://syncthing.net/downloads/",
+    "PatternSetup": "*syncthing.exe",
+    "OneExe2Desktop":true
   },
   {
     "Pattern": "*Sophia.Script.for.Windows.10.LTSC*.zip",
@@ -331,7 +379,8 @@
     "Pattern": "*install.exe",
     "Dir": "internet/onionfruit",
     "Name": "onionfruit",
-    "Url": "https://github.com/dragonfruitnetwork/onionfruit/releases/latest"
+    "Url": "https://github.com/dragonfruitnetwork/onionfruit/releases/latest",
+    "OneExe2Desktop":true
   },
   {
     "Pattern": "*PotPlayerSetup64*.exe",
@@ -361,13 +410,6 @@
     "Arg": "/S"
   },
   {
-    "Pattern": "*opera*setup_x64.exe",
-    "Dir": "internet/opera",
-    "Name": "opera",
-    "Url": "$operaUrl",
-    "Arg": "/silent /startmenushortcut=1 /desktopshortcut=1 /quicklaunchshortcut=1 /launchopera=0 /pintotaskbar=1"
-  },
-  {
     "Pattern": "*softether-vpnclient-v*-rtm-*-windows-x86_x64-intel.exe",
     "Dir": "internet/softethervpn",
     "Name": "softethervpn",
@@ -381,8 +423,9 @@
   },
   {
     "Pattern": "TeamViewerQS.exe",
-    "Dir": "old/internet/teamviewer",
+    "Dir": "admin/!not4copy/old/internet/teamviewer",
     "Name": "teamviewer",
-    "Url": "https://download.teamviewer.com/download/TeamViewerQS.exe"
-  }
+    "Url": "https://download.teamviewer.com/download/TeamViewerQS.exe",
+    "OneExe2Desktop":true
+ }
 ]
