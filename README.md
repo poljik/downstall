@@ -1,1 +1,1 @@
-# script for auto-downloading and auto-installation of applications with сurrent versions
+# script for downloading and silent installation of applications with last versions
