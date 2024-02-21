@@ -1,20 +1,58 @@
 ﻿[
   {
-    "Pattern": "ati.*.zip",
-    "Dir": "other/soft/true_image",
-    "Name": "true_image",
-    "Url": "https://drive.google.com/file/d/1HbcuYD2FUsjbBJ55k9obezLewO80phWa/view?usp=sharing",
-    "Arg": "/S /Q",
-    "RarArg": "-prepack.me",
-    "PatternSetup": "ATI*.exe"
+    "Pattern": "rdpwrap.ini",
+    "Dir": "soft/rdpwrap",
+    "Name": "rdpwrap_ini",
+    "Url": "https://raw.githubusercontent.com/affinityv/INI-RDPWRAP/master/rdpwrap.ini"
   },
   {
-    "Pattern": "wumt_*.zip",
+    "Pattern": "wumt.zip",
     "Dir": "soft/activation",
     "Name": "wumt",
     "Url": "https://drive.google.com/file/d/0BwJH2CazcjsINFZFc1pVdk9mNHM/view?usp=sharing",
     "PatternSetup": "*wumt_x64.exe",
     "OneExe2Desktop":true
+  },
+  {
+    "Pattern": "*opera*setup_x64.exe",
+    "Dir": "internet/opera",
+    "Name": "opera",
+    "Url": "$operaUrl",
+    "Arg": "/silent /startmenushortcut=1 /desktopshortcut=1 /quicklaunchshortcut=1 /launchopera=0 /pintotaskbar=1"
+  },
+  {
+    "Pattern": "ARDC64_*.7z",
+    "Dir": "soft/adobe_reader",
+    "Name": "adobe_reader",
+    "Url": "https://disk.yandex.ru/d/Z9XlY-pAJNOSAw",
+    "Arg": "/quiet /norestart",
+    "PatternSetup": "acroread.msi",
+    "Comment": "# original Acrobat Reader: AcroRdrDC*.exe /sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES # updates: msiexec.exe /update AcroRdrDC*.msp /quiet /norestart"
+  },
+  {
+    "Pattern": "Cloudflare_WARP_Release-x64.msi",
+    "Dir": "other/internet/cloudflare_warp",
+    "Name": "cloudflare_warp",
+    "Url": "https://1111-releases.cloudflareclient.com/windows/Cloudflare_WARP_Release-x64.msi",
+    "Arg": "/quiet /norestart"
+  },
+  {
+    "Pattern": "*FreeFileSync_*_Windows_Setup.exe",
+    "Dir": "other/soft/freefilesync",
+    "Name": "freefilesync",
+    "Url": "https://freefilesync.org/download.php"
+  },
+  {
+    "Pattern": "*Imagine_Plugin_Archive*x64*.zip",
+    "Dir": "media/imagine",
+    "Name": "imagine_plugin_archive",
+    "Url": "https://raw.githubusercontent.com/nyam1003/imagine/main/plugin/x64/Imagine_Plugin_Archive_0.0.6_x64.zip"
+  },
+  {
+    "Pattern": "*SDI_R*.zip",
+    "Dir": "drivers/SDI",
+    "Name": "SDI",
+    "Url": "https://sdi-tool.org/download/"
   },
   {
     "Pattern": "*vvoddpu*.zip",
@@ -23,13 +61,6 @@
     "Url": "https://ssf.gov.by/ru/po-fonda-ru/",
     "Arg": "/S",
     "PatternSetup": "vvoddpu-setup*.exe"
-  },
-  {
-    "Pattern": "*opera*setup_x64.exe",
-    "Dir": "internet/opera",
-    "Name": "opera",
-    "Url": "$operaUrl",
-    "Arg": "/silent /startmenushortcut=1 /desktopshortcut=1 /quicklaunchshortcut=1 /launchopera=0 /pintotaskbar=1"
   },
   {
     "Pattern": "AutoSettingsPS_v*.zip",
@@ -71,22 +102,14 @@
   {
     "Pattern": "*MAS_*_Password_1234.7z",
     "Dir": "soft/activation",
-    "Name": "mas"
+    "Name": "mas",
+    "Comment":"url: https://github.com/massgravel/Microsoft-Activation-Scripts/releases/latest"
   },
   {
     "Pattern": "v64_16.0.*.cab",
     "Dir": "soft/office365",
     "Name": "office365",
     "Comment":"without update function, for update setup files - delete distr and run downstall again"
-  },
-  {
-    "Pattern": "AcroReadDC_*.7z",
-    "Dir": "soft/adobe_reader",
-    "Name": "adobe_reader",
-    "Url": "https://disk.yandex.ru/d/Tiv4LafhAg59bw",
-    "Arg": "/quiet /norestart",
-    "PatternSetup": "acroread.msi",
-    "Comment": "# original Acrobat Reader: AcroRdrDC*.exe /sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES # updates: msiexec.exe /update AcroRdrDC*.msp /quiet /norestart"
   },
   {
     "Pattern": "iview???_x64_setup.exe",
@@ -107,13 +130,6 @@
     "Dir": "media/irfanview",
     "Name": "irfanview_lang_russian",
     "Url": "https://www.irfanview.net/lang/irfanview_lang_russian.exe"
-  },
-  {
-    "Pattern": "Cloudflare_WARP_Release-x64.msi",
-    "Dir": "other/internet/cloudflare_warp",
-    "Name": "cloudflare_warp",
-    "Url": "https://1111-releases.cloudflareclient.com/windows/Cloudflare_WARP_Release-x64.msi",
-    "Arg": "/quiet /norestart"
   },
   {
     "Pattern": "EdgeBlock.zip",
@@ -155,7 +171,7 @@
     "Pattern": "*aimp*.exe",
     "Dir": "media/aimp",
     "Name": "aimp",
-    "Url": "https://www.aimp.ru/?do=download.file&id=29",
+    "Url": "https://www.aimp.ru/?do=download.file&id=3",
     "Arg": "/silent /auto"
   },
   {
@@ -196,12 +212,6 @@
     "PatternSetup": "*RDPWInst.exe"
   },
   {
-    "Pattern": "rdpwrap.ini",
-    "Dir": "soft/rdpwrap",
-    "Name": "rdpwrap_ini",
-    "Url": "https://raw.githubusercontent.com/affinityv/INI-RDPWRAP/master/rdpwrap.ini"
-  },
-  {
     "Pattern": "*winscan2pdf_portable.zip",
     "Dir": "other/soft/winscan2pdf",
     "Name": "winscan2pdf",
@@ -237,31 +247,6 @@
     "Url": "https://www.speedtest.net/apps/cli",
     "PatternSetup": "*speedtest.exe",
     "OneExe2Desktop":true
-  },
-  {
-    "Pattern": "*Imagine_*_x64_Unicode.exe",
-    "Dir": "media/imagine",
-    "Name": "imagine",
-    "Url": "https://www.nyam.pe.kr/dev/imagine/",
-    "Arg": "/S"
-  },
-  {
-    "Pattern": "*Imagine_Plugin_Archive*x64*.zip",
-    "Dir": "media/imagine",
-    "Name": "imagine_plugin_archive",
-    "Url": "https://www.nyam.pe.kr/dev/imagine"
-  },
-  {
-    "Pattern": "*Imagine_Plugin_DCRaw*x64*.zip",
-    "Dir": "media/imagine",
-    "Name": "imagine_plugin_dcraw",
-    "Url": "https://www.nyam.pe.kr/dev/imagine"
-  },
-  {
-    "Pattern": "*Imagine_Plugin_JPEG2000*x64*.zip",
-    "Dir": "media/imagine",
-    "Name": "imagine_plugin_jpeg2000",
-    "Url": "https://www.nyam.pe.kr/dev/imagine"
   },
   {
     "Pattern": "*VeraCrypt*Setup_x64*.msi",
