@@ -17,5 +17,5 @@ To download all applications without installing, you can ignore the arguments, f
 
 There are two more parameters **-downloadOnly**(without installation) and **-installOnly**(without download):
 
-    ./downstall -downloadOnly chrome, firefox
-    ./downstall -installOnly chrome, firefox
+    ./downstall.ps1 -downloadOnly chrome, firefox
+    ./downstall.ps1 -installOnly chrome, firefox
