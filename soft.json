@@ -18,7 +18,7 @@
     "Name": "adobe_reader",
     "Url": "https://disk.yandex.ru/d/Z9XlY-pAJNOSAw",
     "Arg": "/quiet /norestart",
-    "PatternSetup": "acroread.msi",
+    "PatternSetup": "acro*.msi",
     "Comment": "# original Acrobat Reader: AcroRdrDC*.exe /sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES # updates: msiexec.exe /update AcroRdrDC*.msp /quiet /norestart"
   },
   {
