@@ -134,7 +134,7 @@
     "Pattern": "*Imagine_Plugin_Archive*x64*.zip",
     "Dir": "media/imagine",
     "Name": "imagine_plugin_archive",
-    "Url": "https://raw.githubusercontent.com/nyam1003/imagine/main/plugin/x64/Imagine_Plugin_Archive_0.0.6_x64.zip"
+    "Url": "https://raw.githubusercontent.com/nyam1003/imagine/main/plugin/x64/Imagine_Plugin_Archive_0.0.7_x64.zip"
   },
   {
     "Pattern": "*SDI_R*.zip",
@@ -403,7 +403,7 @@
   },
   {
     "Pattern": "*softether-vpnclient-v*-rtm-*-windows-x86_x64-intel.exe",
-    "Dir": "internet/softethervpn",
+    "Dir": "other/internet/softethervpn",
     "Name": "softethervpn",
     "Url": "#softethervpnUrl"
   },
@@ -412,5 +412,26 @@
     "Dir": "other/internet/softethervpn_server",
     "Name": "softethervpn_server",
     "Url": "#softethervpnServerUrl"
+  },
+  {
+    "Pattern": "*PowerShell-*-win-x64.msi",
+    "Dir": "other/soft/powershell",
+    "Name": "powershell",
+    "Url": "https://github.com/PowerShell/PowerShell/releases/latest",
+    "Arg": "/quiet /norestart"
+  },
+  {
+    "Pattern": "Imagine_*_x64_Unicode.exe",
+    "Dir": "media/imagine",
+    "Name": "imagine",
+    "Url": "https://www.nyam.pe.kr/dev/imagine/",
+    "Arg": "/S"
+  },
+  {
+    "Pattern": "*tsetup-x64.*.exe",
+    "Dir": "other/internet/telegram",
+    "Name": "telegram",
+    "Url": "https://github.com/telegramdesktop/tdesktop/releases/latest",
+    "Arg": "/verysilent /norestart"
   }
 ]

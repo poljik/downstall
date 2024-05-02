@@ -1,11 +1,5 @@
 [
   {
-    "Pattern": "Office_*_2016_*.exe",
-    "Dir": "other/soft/office2016",
-    "Name": "office2016",
-    "Arg": "-aip -gm2"
-  },
-  {
     "Pattern": "ati.*.zip",
     "Dir": "other/soft/true_image",
     "Name": "true_image",
@@ -13,12 +7,5 @@
     "Arg": "/S /Q",
     "RarArg": "-prepack.me",
     "PatternSetup": "ATI*.exe"
-  },
-  {
-    "Pattern": "*Imagine_*_Unicode.exe*",
-    "Dir": "media/imagine",
-    "Name": "imagine",
-    "Url": "https://www.nyam.pe.kr/dev/imagine/",
-    "Arg": "/S"
   }
 ]
