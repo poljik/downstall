@@ -7,5 +7,10 @@
     "Arg": "/S /Q",
     "RarArg": "-prepack.me",
     "PatternSetup": "ATI*.exe"
+  },
+  {
+    "Pattern": "softros*sytems.7z",
+    "Dir": "other/soft/softros_lan_messenger",
+    "Name": "softros_lan_messenger"
   }
 ]

@@ -335,7 +335,8 @@
     "Pattern": "*Victoria*.zip",
     "Dir": "portable/victoria",
     "Name": "victoria",
-    "Url": "https://hdd.by/victoria/"
+    "Url": "https://hdd.by/victoria/",
+    "PatternSetup": "victoria.exe"
   },
   {
     "Pattern": "*npp.*.Installer.x64.exe",
