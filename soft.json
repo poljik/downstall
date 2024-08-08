@@ -16,7 +16,7 @@
     "Pattern": "ARDC64_*.7z",
     "Dir": "soft/adobe_reader",
     "Name": "adobe_reader",
-    "Url": "https://disk.yandex.ru/d/Z9XlY-pAJNOSAw",
+    "Url": "https://disk.yandex.ru/d/IuR0Wb3Dgb5Dvg",
     "Arg": "/quiet /norestart",
     "PatternSetup": "acro*.msi",
     "Comment": "# original Acrobat Reader: AcroRdrDC*.exe /sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES # updates: msiexec.exe /update AcroRdrDC*.msp /quiet /norestart"
@@ -30,10 +30,10 @@
     "PatternSetup": "vvoddpu-setup*.exe"
   },
   {
-    "Pattern": "total_commander_1*litepack*.zip",
+    "Pattern": "total_commander_*litepack*.zip",
     "Dir": "other/soft/total_commander",
     "Name": "total_commander",
-    "Url": "https://disk.yandex.by/d/LJ5IDzP0BVFQQ",
+    "Url": "https://samlab.ws/tcpp/total_commander_litepack_setup.zip",
     "Arg": "/S /IL",
     "PatternSetup": "total commander*litepack*.exe"
   },
@@ -106,7 +106,7 @@
     "Pattern": "*syncthing*windows-amd64*.zip",
     "Dir": "other/internet/syncthing",
     "Name": "syncthing",
-    "Url": "https://syncthing.net/downloads/",
+    "Url": "https://github.com/syncthing/syncthing/releases/latest",
     "PatternSetup": "*syncthing.exe",
     "OneExe2Desktop":true
   },
@@ -346,13 +346,6 @@
     "Arg": "/S"
   },
   {
-    "Pattern": "TeamViewerQS.exe",
-    "Dir": "admin/!not4copy/old/internet/teamviewer",
-    "Name": "teamviewer",
-    "Url": "https://download.teamviewer.com/download/TeamViewerQS.exe",
-    "OneExe2Desktop":true
-  },
-  {
     "Pattern": "*firefox*setup*.msi",
     "Dir": "internet/firefox",
     "Name": "firefox",
@@ -434,5 +427,12 @@
     "Name": "telegram",
     "Url": "https://github.com/telegramdesktop/tdesktop/releases/latest",
     "Arg": "/verysilent /norestart"
+  },
+  {
+    "Pattern": "install-Podpis.exe",
+    "Dir": "by/podpis",
+    "Name": "podpis",
+    "Url": "https://app.podpis.by/media/agent/install-Podpis.exe",
+    "Arg": "/quiet /norestart"
   }
 ]
