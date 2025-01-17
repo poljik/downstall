@@ -1,5 +1,11 @@
 ﻿[
   {
+    "Pattern": "*thorium_AVX2*mini_installer*.exe",
+    "Dir": "other/internet/thorium",
+    "Name": "thorium",
+    "Url": "https://github.com/Alex313031/Thorium-Win/releases/latest"
+  },
+  {
     "Pattern": "*opera*setup_x64.exe",
     "Dir": "internet/opera",
     "Name": "opera",
@@ -172,10 +178,10 @@
     "OneExe2Desktop":true
   },
   {
-    "Pattern": "*MAS_*_Password_1234.7z",
+    "Pattern": "Microsoft-Activation-Scripts-master.zip",
     "Dir": "soft/activation",
     "Name": "mas",
-    "Comment":"url: https://github.com/massgravel/Microsoft-Activation-Scripts/releases/latest"
+    "Comment":" new url: https://github.com/massgravel/Microsoft-Activation-Scripts/archive/refs/heads/master.zip  old url: https://github.com/massgravel/Microsoft-Activation-Scripts/releases/latest"
   },
   {
     "Pattern": "v64_16.0.*.cab",
@@ -222,7 +228,7 @@
     "Pattern": "reduced_rate_nds.zip",
     "Dir": "by/platelschik_eaes",
     "Name": "platelschik_eaes_rate",
-    "Url": "https://www.nalog.gov.by/upload/reduced_rate_nds.zip",
+    "Url": "https://nalog.gov.by/upload/reduced_rate_nds.zip",
     "PatternSetup": "reduced_rate_nds.xml"
   },
   {
@@ -434,5 +440,12 @@
     "Name": "podpis",
     "Url": "https://app.podpis.by/media/agent/install-Podpis.exe",
     "Arg": "/quiet /norestart"
+  },
+  {
+    "Pattern": "*psiphon*.exe",
+    "Dir": "other/vpn/psiphon",
+    "Name": "psiphon",
+    "Url": "https://psiphon.ca/ru/download.html",
+    "OneExe2Desktop":true
   }
 ]
