@@ -380,10 +380,10 @@
     "Arg": "/qr /norestart /l* log.txt SSL_CERTIFICATE_OPTION=generate"
   },
   {
-    "Pattern": "Cloudflare_WARP_Release-x64.msi",
+    "Pattern": "*cloudflare_warp*.msi",
     "Dir": "other/internet/cloudflare_warp",
     "Name": "cloudflare_warp",
-    "Url": "https://1111-releases.cloudflareclient.com/windows/Cloudflare_WARP_Release-x64.msi",
+    "Url": "https://1111-releases.cloudflareclient.com/win/latest",
     "Arg": "/quiet /norestart"
   },
   {
