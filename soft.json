@@ -22,7 +22,7 @@
     "Pattern": "ARDC64_*.7z",
     "Dir": "soft/adobe_reader",
     "Name": "adobe_reader",
-    "Url": "https://disk.yandex.ru/d/IuR0Wb3Dgb5Dvg",
+    "Url": "https://disk.yandex.ru/d/AOTAjPBg5dSh-A",
     "Arg": "/quiet /norestart",
     "PatternSetup": "acro*.msi",
     "Comment": "# original Acrobat Reader: AcroRdrDC*.exe /sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES # updates: msiexec.exe /update AcroRdrDC*.msp /quiet /norestart"
