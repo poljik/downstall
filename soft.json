@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "Pattern": "*thorium_AVX2*mini_installer*.exe",
     "Dir": "other/internet/thorium",
@@ -19,10 +19,10 @@
     "Url": "https://raw.githubusercontent.com/affinityv/INI-RDPWRAP/master/rdpwrap.ini"
   },
   {
-    "Pattern": "ARDC64_*.7z",
+    "Pattern": "ARDC*x64*.7z",
     "Dir": "soft/adobe_reader",
     "Name": "adobe_reader",
-    "Url": "https://disk.yandex.ru/d/2XlOnDeLGysSBg",
+    "Url": "https://disk.yandex.ru/d/kdaGK_rirjzLoQ",
     "Arg": "/quiet /norestart",
     "PatternSetup": "acro*.msi",
     "Comment": "# original Acrobat Reader: AcroRdrDC*.exe /sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES # updates: msiexec.exe /update AcroRdrDC*.msp /quiet /norestart"
@@ -120,7 +120,7 @@
     "Pattern": "*PotPlayerSetup64*.exe",
     "Dir": "media/pot_player",
     "Name": "pot_player",
-    "Url": "http://potplayer.daum.net/",
+    "Url": "https://potplayer.tv/",
     "Arg": "/S"
   },
   {
@@ -373,7 +373,7 @@
     "Arg": "/quiet /norestart"
   },
   {
-    "Pattern": "*windowsadmincenter*.msi",
+    "Pattern": "*windowsadmincenter*.exe",
     "Dir": "other/soft/windowsadmincenter",
     "Name": "windowsadmincenter",
     "Url": "https://aka.ms/wacdownload",
