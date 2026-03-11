@@ -60,7 +60,7 @@
   },
   {
     "Pattern": "*winscan2pdf_portable.zip",
-    "Dir": "other/soft/winscan2pdf",
+    "Dir": "portable/winscan2pdf",
     "Name": "winscan2pdf",
     "Url": "https://softwareok.com/Download/WinScan2PDF_Portable.zip",
     "PatternSetup": "*WinScan2PDF_p.exe",
@@ -91,7 +91,7 @@
     "Pattern": "*AvPKISetup*bel*.zip",
     "Dir": "by/avest",
     "Name": "avest",
-    "Url": "https://www.avest.by/crypto/csp.htm",
+    "Url": "https://nces.by/pki/info/software/",
     "PatternSetup": "AvPKISetup*.exe"
   },
   {

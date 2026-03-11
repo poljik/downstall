@@ -1,3 +1,6 @@
+#Requires -RunAsAdministrator
+#Requires -Version 5.1   # Windows 10 LTSC 
+
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $false)]
@@ -14,11 +17,11 @@ DynamicParam {
   $ParameterAttribute.Mandatory = $false
   $ParameterAttribute.Position = 1
   $AttributeCollection.Add($ParameterAttribute)
-  if (Test-Path "soft.json") {
-    $arrSet = (Get-Content -Path "soft.json" | ConvertFrom-JSON).name
+  if (Test-Path "$PSScriptRoot\soft.json") {
+    $arrSet = (Get-Content -Path "$PSScriptRoot\soft.json" | ConvertFrom-JSON).name
   }
-  if (Test-Path "soft+.json") {
-    $arrSet += (Get-Content -Path "soft+.json" | ConvertFrom-JSON).name
+  if (Test-Path "$PSScriptRoot\soft+.json") {
+    $arrSet += (Get-Content -Path "$PSScriptRoot\soft+.json" | ConvertFrom-JSON).name
   }
   $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($arrSet)
   $AttributeCollection.Add($ValidateSetAttribute)
@@ -32,8 +35,6 @@ begin {
 
 process {
   $Host.UI.RawUI.WindowTitle = "Downstall script 4 Windows $([char]0x00A9) poljik 2019-2026"
-  #Requires -RunAsAdministrator
-  #Requires -Version 5.1   # Windows 10 LTSC 
 
   # enable TLSv1.2 for compatibility with older clients
   [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
@@ -51,15 +52,16 @@ process {
     Write-Warning -Message "Internet is missing, --installOnly activated"
   }
 
-  if (Test-Path "soft.json") {
-    $soft = Get-Content -Path "soft.json" | ConvertFrom-JSON
+  $soft = @()
+  if (Test-Path "$PSScriptRoot\soft.json") {
+    $soft = Get-Content -Path "$PSScriptRoot\soft.json" | ConvertFrom-JSON
   }
   else {
     Write-Warning "Soft.json is missing"
   }
 
-  if (Test-Path "soft+.json") {
-    $soft += Get-Content -Path "soft+.json" | ConvertFrom-JSON
+  if (Test-Path "$PSScriptRoot\soft+.json") {
+    $soft += Get-Content -Path "$PSScriptRoot\soft+.json" | ConvertFrom-JSON
   }
 
   if (-not $install) {
@@ -68,19 +70,30 @@ process {
   }
 
   # get windows version
-  if (-not $IsLinux) {
-    $OSVersion = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name ProductName).ProductName
-    switch -Wildcard ($OSVersion) {
-      'Windows 7*' { $script:winVersion = 7; break }
-      'Windows 8*' { $script:winVersion = 8; break }
-      'Windows 10*' { $script:winVersion = 10; break }
-      'Windows 11*' { $script:winVersion = 11; break }
-      'Windows Server 2012*' { $script:winServerVersion = 2012; break }
-      'Windows Server 2016*' { $script:winServerVersion = 2016; break }
-      'Windows Server 2019*' { $script:winServerVersion = 2019; break }
-      'Windows Server 2022*' { $script:winServerVersion = 2022; break }
+  function Get-OSVersion {
+    if (-not $IsLinux) {
+      $build = [System.Environment]::OSVersion.Version.Build
+      $productName = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion").ProductName
+      if ($productName -match 'Server') {
+        if ($build -ge 26100) { return "2025" }
+        elseif ($build -ge 20348) { return "2022" }
+        elseif ($build -ge 17763) { return "2019" }
+        elseif ($build -ge 14393) { return "2016" }
+        elseif ($build -eq 9600) { return "2012" } # 2012 R2
+        elseif ($build -eq 9200) { return "2012" }
+        elseif ($build -ge 7600) { return "2008" } # 2008 R2
+      }
+      else {
+        if ($build -ge 22000) { return "11" }
+        elseif ($build -ge 10240) { return "10" }
+        elseif ($build -eq 9600) { return "8.1" }
+        elseif ($build -eq 9200) { return "8" }
+        elseif ($build -ge 7600) { return "7" }
+      }
     }
   }
+
+  $winVersion = Get-OSVersion
 
   # get bit OS
   if ([System.Environment]::Is64BitOperatingSystem) {
@@ -94,7 +107,7 @@ process {
     param (
       [String]$pattern, [String]$dir
     )
-    $file = Get-ChildItem -Path "$(Get-Location)" -Include $pattern -Recurse -Force -ErrorAction Ignore
+    $file = Get-ChildItem -Path "$PSScriptRoot" -Include $pattern -Recurse -Force -ErrorAction Ignore
     if ($file.Count) {
       $fileName = $file[0].Name
       if ($file[0].Attributes -eq 'Directory') {
@@ -105,12 +118,12 @@ process {
       }
     }
     else {
-      $dirs = Get-ChildItem -Path "$(Get-Location)" -Include $dir -Recurse -Force  -ErrorAction Ignore
+      $dirs = Get-ChildItem -Path "$PSScriptRoot" -Include $dir -Recurse -Force  -ErrorAction Ignore
       if ($dirs.Count) {
         $filePath = $dirs[0].FullName
       }
       else {
-        $filePath = "$(Get-Location)" + "/" + $dir.Replace("*", " ")
+        $filePath = "$PSScriptRoot" + "/" + $dir.Replace("*", " ")
       }
     }
     return $filePath, $fileName
@@ -225,7 +238,7 @@ process {
       }
 
       "platelschik_eaes_rate" {
-        $pathPlatelschik = "C:\Program Files*\МНС\Плательщик ЕАЭС*\description"
+        $pathPlatelschik = "${Env:ProgramFiles(x86)}\МНС\Плательщик ЕАЭС*\description"
         if (Test-Path ($pathPlatelschik)) {
           $fileSetup = Get-ChildItem -Path $pathPlatelschik -Force
         }
@@ -245,7 +258,7 @@ process {
       }
 
       "rdpwrap_ini" {
-        $pathPlatelschik = "C:\Program Files\RDP Wrapper\"
+        $pathPlatelschik = "$Env:ProgramFiles\RDP Wrapper\"
         if (Test-Path ($pathPlatelschik)) {
           $fileSetup = $pathPlatelschik
         }
@@ -267,8 +280,8 @@ process {
       # main installation
       default {
         Clear-Variable pass -ErrorAction SilentlyContinue
-        if (Test-Path downstall+.ps1) {
-          $pass = Invoke-Expression -Command "downstall+.ps1"
+        if (Test-Path $PSScriptRoot/downstall+.ps1) {
+          $pass = Invoke-Expression -Command "$PSScriptRoot/downstall+.ps1"
         }
         if (-not $pass) {
           if (($linkName -like "*.zip") -or ($linkName -like "*.7z") -or ($linkName -like "*.rar") -or ($linkName -like "*.gz")) {
