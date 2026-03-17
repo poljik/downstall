@@ -457,7 +457,12 @@ process {
         if ($endIndex -eq -1) {
           # no path
           $ud = [System.Web.HttpUtility]::UrlEncode($url)
-          $link = Invoke-RestMethod "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=$ud&limit=200"
+          try {
+            $link = Invoke-RestMethod "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=$ud&limit=200"
+          }
+          catch {
+            Write-Warning "$fileName - Error: $($_.Exception.Message)"
+          }
         }
         else {
           $ud = [System.Web.HttpUtility]::UrlEncode($url.Substring(0, $endIndex))
@@ -473,8 +478,10 @@ process {
         }
         else {
           $link = $link._embedded.items | Where-Object { $_.name -like $pattern } | Sort-Object -Property created
-          $linkName = $link[-1].name
-          $link = $link[-1].file
+          if ($link) {
+            $linkName = $link[-1].name
+            $link = $link[-1].file
+          }
         }
       }
 
