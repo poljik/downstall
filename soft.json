@@ -1,444 +1,444 @@
 [
   {
-    "Pattern": "*thorium_AVX2*mini_installer*.exe",
-    "Dir": "other/internet/thorium",
-    "Name": "thorium",
-    "Url": "https://github.com/Alex313031/Thorium-Win/releases/latest"
+    "SearchPattern": "*thorium_AVX2*mini_installer*.exe",
+    "DirectoryName": "other/internet/thorium",
+    "SoftwareName": "thorium",
+    "DownloadUrl": "https://github.com/Alex313031/Thorium-Win/releases/latest"
   },
   {
-    "Pattern": "*opera*setup_x64.exe",
-    "Dir": "internet/opera",
-    "Name": "opera",
-    "Url": "#operaUrl",
-    "Arg": "/silent /startmenushortcut=1 /desktopshortcut=1 /quicklaunchshortcut=1 /launchopera=0 /pintotaskbar=1"
+    "SearchPattern": "*opera*setup_x64.exe",
+    "DirectoryName": "internet/opera",
+    "SoftwareName": "opera",
+    "DownloadUrl": "#operaUrl",
+    "InstallArgs": "/silent /startmenushortcut=1 /desktopshortcut=1 /quicklaunchshortcut=1 /launchopera=0 /pintotaskbar=1"
   },
   {
-    "Pattern": "rdpwrap.ini",
-    "Dir": "soft/rdpwrap",
-    "Name": "rdpwrap_ini",
-    "Url": "https://raw.githubusercontent.com/affinityv/INI-RDPWRAP/master/rdpwrap.ini"
+    "SearchPattern": "rdpwrap.ini",
+    "DirectoryName": "soft/rdpwrap",
+    "SoftwareName": "rdpwrap_ini",
+    "DownloadUrl": "https://raw.githubusercontent.com/affinityv/INI-RDPWRAP/master/rdpwrap.ini"
   },
   {
-    "Pattern": "ARDC*x64*.7z",
-    "Dir": "soft/adobe_reader",
-    "Name": "adobe_reader",
-    "Url": "https://disk.yandex.ru/d/Ex9XjxqrhnKNWg",
-    "Arg": "/quiet /norestart",
-    "PatternSetup": "acro*.msi",
+    "SearchPattern": "ARDC*x64*.7z",
+    "DirectoryName": "soft/adobe_reader",
+    "SoftwareName": "adobe_reader",
+    "DownloadUrl": "https://disk.yandex.ru/d/Ex9XjxqrhnKNWg",
+    "InstallArgs": "/quiet /norestart",
+    "SetupPattern": "acro*.msi",
     "Comment": "# original Acrobat Reader: AcroRdrDC*.exe /sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES # updates: msiexec.exe /update AcroRdrDC*.msp /quiet /norestart"
   },
   {
-    "Pattern": "*vvoddpu*.zip",
-    "Dir": "by/vvoddpu",
-    "Name": "vvoddpu",
-    "Url": "https://ssf.gov.by/ru/po-fonda-ru/",
-    "Arg": "/S",
-    "PatternSetup": "vvoddpu-setup*.exe"
+    "SearchPattern": "*vvoddpu*.zip",
+    "DirectoryName": "by/vvoddpu",
+    "SoftwareName": "vvoddpu",
+    "DownloadUrl": "https://ssf.gov.by/ru/po-fonda-ru/",
+    "InstallArgs": "/S",
+    "SetupPattern": "vvoddpu-setup*.exe"
   },
   {
-    "Pattern": "total_commander_*litepack*.zip",
-    "Dir": "other/soft/total_commander",
-    "Name": "total_commander",
-    "Url": "https://samlab.ws/tcpp/total_commander_litepack_setup.zip",
-    "Arg": "/S /IL",
-    "PatternSetup": "total commander*litepack*.exe"
+    "SearchPattern": "total_commander_*litepack*.zip",
+    "DirectoryName": "other/soft/total_commander",
+    "SoftwareName": "total_commander",
+    "DownloadUrl": "https://samlab.ws/tcpp/total_commander_litepack_setup.zip",
+    "InstallArgs": "/S /IL",
+    "SetupPattern": "total commander*litepack*.exe"
   },
   {
-    "Pattern": "*aimp*.exe",
-    "Dir": "media/aimp",
-    "Name": "aimp",
-    "Url": "https://www.aimp.ru/?do=download.file&id=3",
-    "Arg": "/silent /auto"
+    "SearchPattern": "*aimp*.exe",
+    "DirectoryName": "media/aimp",
+    "SoftwareName": "aimp",
+    "DownloadUrl": "https://www.aimp.ru/?do=download.file&id=3",
+    "InstallArgs": "/silent /auto"
   },
   {
-    "Pattern": "anydesk.exe",
-    "Dir": "internet/anydesk",
-    "Name": "anydesk",
-    "Url": "https://download.anydesk.com/AnyDesk.exe",
-    "OneExe2Desktop":true,
+    "SearchPattern": "anydesk.exe",
+    "DirectoryName": "internet/anydesk",
+    "SoftwareName": "anydesk",
+    "DownloadUrl": "https://download.anydesk.com/AnyDesk.exe",
+    "ExtractSingleExe": true,
     "Comment": "arg: --install \"C:\\Program Files (x86)\\AnyDesk\" --create-shortcuts --create-desktop-icon --silent"
   },
   {
-    "Pattern": "*winscan2pdf_portable.zip",
-    "Dir": "portable/winscan2pdf",
-    "Name": "winscan2pdf",
-    "Url": "https://softwareok.com/Download/WinScan2PDF_Portable.zip",
-    "PatternSetup": "*WinScan2PDF_p.exe",
-    "OneExe2Desktop":true
+    "SearchPattern": "*winscan2pdf_portable.zip",
+    "DirectoryName": "portable/winscan2pdf",
+    "SoftwareName": "winscan2pdf",
+    "DownloadUrl": "https://softwareok.com/Download/WinScan2PDF_Portable.zip",
+    "SetupPattern": "*WinScan2PDF_p.exe",
+    "ExtractSingleExe": true
   },
   {
-    "Pattern": "*ZeroTier*.msi",
-    "Dir": "internet/zerotier",
-    "Name": "zerotier",
-    "Url": "https://download.zerotier.com/dist/ZeroTier%20One.msi",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "*ZeroTier*.msi",
+    "DirectoryName": "internet/zerotier",
+    "SoftwareName": "zerotier",
+    "DownloadUrl": "https://download.zerotier.com/dist/ZeroTier%20One.msi",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "*far*.x64.*.msi",
-    "Dir": "soft/far",
-    "Name": "far",
-    "Url": "https://github.com/FarGroup/FarManager/releases/latest",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "*far*.x64.*.msi",
+    "DirectoryName": "soft/far",
+    "SoftwareName": "far",
+    "DownloadUrl": "https://github.com/FarGroup/FarManager/releases/latest",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "*EDeclaration*(Include_JRE).exe",
-    "Dir": "by/edeclaration",
-    "Name": "edeclaration",
-    "Url": "https://lkfl.portal.nalog.gov.by/web/guest/arm_soft",
-    "Arg": "/verysilent /norestart"
+    "SearchPattern": "*EDeclaration*(Include_JRE).exe",
+    "DirectoryName": "by/edeclaration",
+    "SoftwareName": "edeclaration",
+    "DownloadUrl": "https://lkfl.portal.nalog.gov.by/web/guest/arm_soft",
+    "InstallArgs": "/verysilent /norestart"
   },
   {
-    "Pattern": "*AvPKISetup*bel*.zip",
-    "Dir": "by/avest",
-    "Name": "avest",
-    "Url": "https://nces.by/pki/info/software/",
-    "PatternSetup": "AvPKISetup*.exe"
+    "SearchPattern": "*AvPKISetup*bel*.zip",
+    "DirectoryName": "by/avest",
+    "SoftwareName": "avest",
+    "DownloadUrl": "https://nces.by/pki/info/software/",
+    "SetupPattern": "AvPKISetup*.exe"
   },
   {
-    "Pattern": "*viber*setup*.exe",
-    "Dir": "other/internet/viber",
-    "Name": "viber",
-    "Url": "https://www.viber.com/ru/download/",
-    "Arg": "/silent /auto"
+    "SearchPattern": "*viber*setup*.exe",
+    "DirectoryName": "other/internet/viber",
+    "SoftwareName": "viber",
+    "DownloadUrl": "https://www.viber.com/ru/download/",
+    "InstallArgs": "/silent /auto"
   },
   {
-    "Pattern": "*winrar-x64*ru.exe",
-    "Dir": "soft/winrar",
-    "Name": "winrar",
-    "Url": "https://www.rarlab.com/download.htm",
-    "Arg": "/s"
+    "SearchPattern": "*winrar-x64*ru.exe",
+    "DirectoryName": "soft/winrar",
+    "SoftwareName": "winrar",
+    "DownloadUrl": "https://www.rarlab.com/download.htm",
+    "InstallArgs": "/s"
   },
   {
-    "Pattern": "*syncthing*windows-amd64*.zip",
-    "Dir": "other/internet/syncthing",
-    "Name": "syncthing",
-    "Url": "https://github.com/syncthing/syncthing/releases/latest",
-    "PatternSetup": "*syncthing.exe",
-    "OneExe2Desktop":true
+    "SearchPattern": "*syncthing*windows-amd64*.zip",
+    "DirectoryName": "other/internet/syncthing",
+    "SoftwareName": "syncthing",
+    "DownloadUrl": "https://github.com/syncthing/syncthing/releases/latest",
+    "SetupPattern": "*syncthing.exe",
+    "ExtractSingleExe": true
   },
   {
-    "Pattern": "*PotPlayerSetup64*.exe",
-    "Dir": "media/pot_player",
-    "Name": "pot_player",
-    "Url": "https://potplayer.tv/",
-    "Arg": "/S"
+    "SearchPattern": "*PotPlayerSetup64*.exe",
+    "DirectoryName": "media/pot_player",
+    "SoftwareName": "pot_player",
+    "DownloadUrl": "https://potplayer.tv/",
+    "InstallArgs": "/S"
   },
   {
-    "Pattern": "*7z*-x64.msi",
-    "Dir": "soft/7zip",
-    "Name": "7zip",
-    "Url": "https://www.7-zip.org/download.html",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "*7z*-x64.msi",
+    "DirectoryName": "soft/7zip",
+    "SoftwareName": "7zip",
+    "DownloadUrl": "https://www.7-zip.org/download.html",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "*FreeFileSync_*_Windows_Setup.exe",
-    "Dir": "other/soft/freefilesync",
-    "Name": "freefilesync",
-    "Url": "https://freefilesync.org/download.php"
+    "SearchPattern": "*FreeFileSync_*_Windows_Setup.exe",
+    "DirectoryName": "other/soft/freefilesync",
+    "SoftwareName": "freefilesync",
+    "DownloadUrl": "https://freefilesync.org/download.php"
   },
   {
-    "Pattern": "*Imagine_Plugin_Archive*x64*.zip",
-    "Dir": "media/imagine",
-    "Name": "imagine_plugin_archive",
-    "Url": "https://raw.githubusercontent.com/nyam1003/imagine/main/plugin/x64/Imagine_Plugin_Archive_0.0.7_x64.zip"
+    "SearchPattern": "*Imagine_Plugin_Archive*x64*.zip",
+    "DirectoryName": "media/imagine",
+    "SoftwareName": "imagine_plugin_archive",
+    "DownloadUrl": "https://raw.githubusercontent.com/nyam1003/imagine/main/plugin/x64/Imagine_Plugin_Archive_0.0.7_x64.zip"
   },
   {
-    "Pattern": "*SDI_*.7z",
-    "Dir": "drivers/SDI",
-    "Name": "SDI",
-    "Url": "https://sdi-tool.org/download/"
+    "SearchPattern": "*SDI_*.7z",
+    "DirectoryName": "drivers/SDI",
+    "SoftwareName": "SDI",
+    "DownloadUrl": "https://sdi-tool.org/download/"
   },
   {
-    "Pattern": "AutoSettingsPS_v*.zip",
-    "Dir": "admin/autosettingsps",
-    "Name": "autoSettingsPS",
-    "Url": "https://disk.yandex.by/d/CMqvcp1F3QiaWL/Windows%2010%201809%2B"
+    "SearchPattern": "AutoSettingsPS_v*.zip",
+    "DirectoryName": "admin/autosettingsps",
+    "SoftwareName": "autoSettingsPS",
+    "DownloadUrl": "https://disk.yandex.by/d/CMqvcp1F3QiaWL/Windows%2010%201809%2B"
   },
   {
-    "Pattern": "tsd-4*.7z",
-    "Dir": "drivers/screwdrivers",
-    "Name": "screwdrivers",
-    "Url": "https://disk.yandex.by/d/l19t3GLmftxhNg/v4",
-    "Arg": "/quiet /norestart",
-    "RarArg": "-pru-board",
-    "PatternSetup": "screwdrivers*client*x64.msi"
+    "SearchPattern": "tsd-4*.7z",
+    "DirectoryName": "drivers/screwdrivers",
+    "SoftwareName": "screwdrivers",
+    "DownloadUrl": "https://disk.yandex.by/d/l19t3GLmftxhNg/v4",
+    "InstallArgs": "/quiet /norestart",
+    "ArchiveArgs": "-pru-board",
+    "SetupPattern": "screwdrivers*client*x64.msi"
   },
   {
-    "Pattern": "*rufus-*p.exe",
-    "Dir": "admin",
-    "Name": "rufus",
-    "Url": "https://github.com/pbatard/rufus/releases/latest",
-    "OneExe2Desktop":true
+    "SearchPattern": "*rufus-*p.exe",
+    "DirectoryName": "admin",
+    "SoftwareName": "rufus",
+    "DownloadUrl": "https://github.com/pbatard/rufus/releases/latest",
+    "ExtractSingleExe": true
   },
   {
-    "Pattern": "putty.exe",
-    "Dir": "admin",
-    "Name": "putty",
-    "Url": "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe",
-    "OneExe2Desktop":true
+    "SearchPattern": "putty.exe",
+    "DirectoryName": "admin",
+    "SoftwareName": "putty",
+    "DownloadUrl": "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe",
+    "ExtractSingleExe": true
   },
   {
-    "Pattern": "Microsoft-Activation-Scripts-master.zip",
-    "Dir": "soft/activation",
-    "Name": "mas",
-    "Comment":" new url: https://github.com/massgravel/Microsoft-Activation-Scripts/archive/refs/heads/master.zip  old url: https://github.com/massgravel/Microsoft-Activation-Scripts/releases/latest"
+    "SearchPattern": "Microsoft-Activation-Scripts-master.zip",
+    "DirectoryName": "soft/activation",
+    "SoftwareName": "mas",
+    "Comment": " new url: https://github.com/massgravel/Microsoft-Activation-Scripts/archive/refs/heads/master.zip  old url: https://github.com/massgravel/Microsoft-Activation-Scripts/releases/latest"
   },
   {
-    "Pattern": "v64_16.0.*.cab",
-    "Dir": "soft/office365",
-    "Name": "office365",
-    "Comment":"without update function, for update setup files - delete distr and run downstall again"
+    "SearchPattern": "v64_16.0.*.cab",
+    "DirectoryName": "soft/office365",
+    "SoftwareName": "office365",
+    "Comment": "without update function, for update setup files - delete distr and run downstall again"
   },
   {
-    "Pattern": "iview???_x64_setup.exe",
-    "Dir": "media/irfanview",
-    "Name": "irfanview",
-    "Url": "https://www.irfanview.info/files/iview#irfanviewVersion_x64_setup.exe",
-    "Arg": "/silent /group=1 /allusers=1"
+    "SearchPattern": "iview???_x64_setup.exe",
+    "DirectoryName": "media/irfanview",
+    "SoftwareName": "irfanview",
+    "DownloadUrl": "https://www.irfanview.info/files/iview#irfanviewVersion_x64_setup.exe",
+    "InstallArgs": "/silent /group=1 /allusers=1"
   },
   {
-    "Pattern": "iview*_plugins_x64_setup.exe",
-    "Dir": "media/irfanview",
-    "Name": "irfanview_plugins",
-    "Url": "https://www.irfanview.info/files/iview#irfanviewVersion_plugins_x64_setup.exe",
-    "Arg": "/silent"
+    "SearchPattern": "iview*_plugins_x64_setup.exe",
+    "DirectoryName": "media/irfanview",
+    "SoftwareName": "irfanview_plugins",
+    "DownloadUrl": "https://www.irfanview.info/files/iview#irfanviewVersion_plugins_x64_setup.exe",
+    "InstallArgs": "/silent"
   },
   {
-    "Pattern": "irfanview_lang_russian.exe",
-    "Dir": "media/irfanview",
-    "Name": "irfanview_lang_russian",
-    "Url": "https://www.irfanview.net/lang/irfanview_lang_russian.exe"
+    "SearchPattern": "irfanview_lang_russian.exe",
+    "DirectoryName": "media/irfanview",
+    "SoftwareName": "irfanview_lang_russian",
+    "DownloadUrl": "https://www.irfanview.net/lang/irfanview_lang_russian.exe"
   },
   {
-    "Pattern": "EdgeBlock.zip",
-    "Dir": "soft/edgeblock",
-    "Name": "edgeblock",
-    "Url": "https://www.sordum.org/files/downloads.php?st-edge-block",
-    "PatternSetup": "*EdgeBlock_x64.exe",
-    "OneExe2Desktop":true
+    "SearchPattern": "EdgeBlock.zip",
+    "DirectoryName": "soft/edgeblock",
+    "SoftwareName": "edgeblock",
+    "DownloadUrl": "https://www.sordum.org/files/downloads.php?st-edge-block",
+    "SetupPattern": "*EdgeBlock_x64.exe",
+    "ExtractSingleExe": true
   },
   {
-    "Pattern": "*АРМ*Плательщик*ЕАЭС*.exe",
-    "Dir": "by/platelschik_eaes",
-    "Name": "platelschik_eaes",
-    "Url": "https://www.nalog.gov.by/software/arm-payer/",
-    "Arg": "/verysilent /norestart"
+    "SearchPattern": "*АРМ*Плательщик*ЕАЭС*.exe",
+    "DirectoryName": "by/platelschik_eaes",
+    "SoftwareName": "platelschik_eaes",
+    "DownloadUrl": "https://www.nalog.gov.by/software/arm-payer/",
+    "InstallArgs": "/verysilent /norestart"
   },
   {
-    "Pattern": "*reduced_rate_nds_*.zip",
-    "Dir": "by/platelschik_eaes",
-    "Name": "platelschik_eaes_rate",
-    "Url": "https://www.nalog.gov.by/software/arm-payer/",
-    "PatternSetup": "reduced_rate_nds.xml"
+    "SearchPattern": "*reduced_rate_nds_*.zip",
+    "DirectoryName": "by/platelschik_eaes",
+    "SoftwareName": "platelschik_eaes_rate",
+    "DownloadUrl": "https://www.nalog.gov.by/software/arm-payer/",
+    "SetupPattern": "reduced_rate_nds.xml"
   },
   {
-    "Pattern": "*RDPWrap*.zip",
-    "Dir": "soft/rdpwrap",
-    "Name": "rdpwrap",
-    "Url": "https://github.com/stascorp/rdpwrap/releases/latest",
-    "Arg": "-i -o",
-    "PatternSetup": "*RDPWInst.exe"
+    "SearchPattern": "*RDPWrap*.zip",
+    "DirectoryName": "soft/rdpwrap",
+    "SoftwareName": "rdpwrap",
+    "DownloadUrl": "https://github.com/stascorp/rdpwrap/releases/latest",
+    "InstallArgs": "-i -o",
+    "SetupPattern": "*RDPWInst.exe"
   },
   {
-    "Pattern": "*vc_redist*x86*.exe",
-    "Dir": "soft",
-    "Name": "vc_redistx86",
-    "Url": "https://docs.microsoft.com/ru-RU/cpp/windows/latest-supported-vc-redist?view=msvc-170",
-    "Arg": "/quiet"
+    "SearchPattern": "*vc_redist*x86*.exe",
+    "DirectoryName": "soft",
+    "SoftwareName": "vc_redistx86",
+    "DownloadUrl": "https://docs.microsoft.com/ru-RU/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+    "InstallArgs": "/quiet"
   },
   {
-    "Pattern": "*vc_redist*x64*.exe",
-    "Dir": "soft",
-    "Name": "vc_redistx64",
-    "Url": "https://docs.microsoft.com/ru-RU/cpp/windows/latest-supported-vc-redist?view=msvc-170",
-    "Arg": "/quiet"
+    "SearchPattern": "*vc_redist*x64*.exe",
+    "DirectoryName": "soft",
+    "SoftwareName": "vc_redistx64",
+    "DownloadUrl": "https://docs.microsoft.com/ru-RU/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+    "InstallArgs": "/quiet"
   },
   {
-    "Pattern": "*ookla-speedtest*win64.zip",
-    "Dir": "other/internet/speedtest",
-    "Name": "speedtest",
-    "Url": "https://www.speedtest.net/apps/cli",
-    "PatternSetup": "*speedtest.exe",
-    "OneExe2Desktop":true
+    "SearchPattern": "*ookla-speedtest*win64.zip",
+    "DirectoryName": "other/internet/speedtest",
+    "SoftwareName": "speedtest",
+    "DownloadUrl": "https://www.speedtest.net/apps/cli",
+    "SetupPattern": "*speedtest.exe",
+    "ExtractSingleExe": true
   },
   {
-    "Pattern": "*VeraCrypt*Setup_x64*.msi",
-    "Dir": "other/soft/veracrypt",
-    "Name": "veracrypt",
-    "Url": "https://www.veracrypt.fr/en/Downloads.html",
-    "Arg": "/quiet /norestart ACCEPTLICENSE=YES"
+    "SearchPattern": "*VeraCrypt*Setup_x64*.msi",
+    "DirectoryName": "other/soft/veracrypt",
+    "SoftwareName": "veracrypt",
+    "DownloadUrl": "https://www.veracrypt.fr/en/Downloads.html",
+    "InstallArgs": "/quiet /norestart ACCEPTLICENSE=YES"
   },
   {
-    "Pattern": "*wireguard-amd64*.msi",
-    "Dir": "other/internet/wireguard",
-    "Name": "wireguard",
-    "Url": "https://download.wireguard.com/windows-client",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "*wireguard-amd64*.msi",
+    "DirectoryName": "other/internet/wireguard",
+    "SoftwareName": "wireguard",
+    "DownloadUrl": "https://download.wireguard.com/windows-client",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "*trjsetup*.exe",
-    "Dir": "other/antivirus/trojan_remover",
-    "Name": "trojan_remover",
-    "Url": "https://www.simplysup.com/tremover/download_full.html",
-    "Arg": "/verysilent /norestart"
+    "SearchPattern": "*trjsetup*.exe",
+    "DirectoryName": "other/antivirus/trojan_remover",
+    "SoftwareName": "trojan_remover",
+    "DownloadUrl": "https://www.simplysup.com/tremover/download_full.html",
+    "InstallArgs": "/verysilent /norestart"
   },
   {
-    "Pattern": "*Sophia.Script.for.Windows.10.LTSC*.zip",
-    "Dir": "tweaks/sophia",
-    "Name": "sophia_script_10ltsc",
-    "Url": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
+    "SearchPattern": "*Sophia.Script.for.Windows.10.LTSC*.zip",
+    "DirectoryName": "tweaks/sophia",
+    "SoftwareName": "sophia_script_10ltsc",
+    "DownloadUrl": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
   },
   {
-    "Pattern": "*Sophia.Script.for.Windows.10.PowerShell.7*.zip",
-    "Dir": "tweaks/sophia",
-    "Name": "sophia_script_10ps7",
-    "Url": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
+    "SearchPattern": "*Sophia.Script.for.Windows.10.PowerShell.7*.zip",
+    "DirectoryName": "tweaks/sophia",
+    "SoftwareName": "sophia_script_10ps7",
+    "DownloadUrl": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
   },
   {
-    "Pattern": "*Sophia.Script.for.Windows.11.PowerShell.7*.zip",
-    "Dir": "tweaks/sophia",
-    "Name": "sophia_script_11ps7",
-    "Url": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
+    "SearchPattern": "*Sophia.Script.for.Windows.11.PowerShell.7*.zip",
+    "DirectoryName": "tweaks/sophia",
+    "SoftwareName": "sophia_script_11ps7",
+    "DownloadUrl": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
   },
   {
-    "Pattern": "*Sophia.Script.Wrapper.*.zip",
-    "Dir": "tweaks/sophia",
-    "Name": "sophia_script_wrapper",
-    "Url": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
+    "SearchPattern": "*Sophia.Script.Wrapper.*.zip",
+    "DirectoryName": "tweaks/sophia",
+    "SoftwareName": "sophia_script_wrapper",
+    "DownloadUrl": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
   },
   {
-    "Pattern": "*SophiApp.zip",
-    "Dir": "tweaks/sophia",
-    "Name": "sophia_app",
-    "Url": "https://github.com/Sophia-Community/SophiApp/releases/latest"
+    "SearchPattern": "*SophiApp.zip",
+    "DirectoryName": "tweaks/sophia",
+    "SoftwareName": "sophia_app",
+    "DownloadUrl": "https://github.com/Sophia-Community/SophiApp/releases/latest"
   },
   {
-    "Pattern": "*DriverStoreExplorer*.zip",
-    "Dir": "other/drivers/drivers_store_explorer",
-    "Name": "drivers_store_explorer",
-    "Url": "https://github.com/lostindark/DriverStoreExplorer/releases/latest"
+    "SearchPattern": "*DriverStoreExplorer*.zip",
+    "DirectoryName": "other/drivers/drivers_store_explorer",
+    "SoftwareName": "drivers_store_explorer",
+    "DownloadUrl": "https://github.com/lostindark/DriverStoreExplorer/releases/latest"
   },
   {
-    "Pattern": "*ventoy*linux.tar.gz",
-    "Dir": "other/soft/ventoy",
-    "Name": "ventoy_linux",
-    "Url": "https://github.com/ventoy/Ventoy/releases/latest"
+    "SearchPattern": "*ventoy*linux.tar.gz",
+    "DirectoryName": "other/soft/ventoy",
+    "SoftwareName": "ventoy_linux",
+    "DownloadUrl": "https://github.com/ventoy/Ventoy/releases/latest"
   },
   {
-    "Pattern": "*ventoy*windows.zip",
-    "Dir": "other/soft/ventoy",
-    "Name": "ventoy",
-    "Url": "https://github.com/ventoy/Ventoy/releases/latest"
+    "SearchPattern": "*ventoy*windows.zip",
+    "DirectoryName": "other/soft/ventoy",
+    "SoftwareName": "ventoy",
+    "DownloadUrl": "https://github.com/ventoy/Ventoy/releases/latest"
   },
   {
-    "Pattern": "*install.exe",
-    "Dir": "internet/onionfruit",
-    "Name": "onionfruit",
-    "Url": "https://github.com/dragonfruitnetwork/onionfruit/releases/latest",
-    "OneExe2Desktop":true
+    "SearchPattern": "*install.exe",
+    "DirectoryName": "internet/onionfruit",
+    "SoftwareName": "onionfruit",
+    "DownloadUrl": "https://github.com/dragonfruitnetwork/onionfruit/releases/latest",
+    "ExtractSingleExe": true
   },
   {
-    "Pattern": "*Victoria*.zip",
-    "Dir": "portable/victoria",
-    "Name": "victoria",
-    "Url": "https://hdd.by/victoria/",
-    "PatternSetup": "victoria.exe"
+    "SearchPattern": "*Victoria*.zip",
+    "DirectoryName": "portable/victoria",
+    "SoftwareName": "victoria",
+    "DownloadUrl": "https://hdd.by/victoria/",
+    "SetupPattern": "victoria.exe"
   },
   {
-    "Pattern": "*npp.*.Installer.x64.exe",
-    "Dir": "other/soft/notepad++",
-    "Name": "notepad++",
-    "Url": "#notepadppUrl",
-    "Arg": "/S"
+    "SearchPattern": "*npp.*.Installer.x64.exe",
+    "DirectoryName": "other/soft/notepad++",
+    "SoftwareName": "notepad++",
+    "DownloadUrl": "#notepadppUrl",
+    "InstallArgs": "/S"
   },
   {
-    "Pattern": "*firefox*setup*.msi",
-    "Dir": "internet/firefox",
-    "Name": "firefox",
-    "Url": "https://download.mozilla.org/?product=firefox-msi-latest-ssl&os=win64&lang=ru",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "*firefox*setup*.msi",
+    "DirectoryName": "internet/firefox",
+    "SoftwareName": "firefox",
+    "DownloadUrl": "https://download.mozilla.org/?product=firefox-msi-latest-ssl&os=win64&lang=ru",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "*thunderbird*setup*.msi",
-    "Dir": "other/internet/thunderbird",
-    "Name": "thunderbird",
-    "Url": "https://download.mozilla.org/?product=thunderbird-msi-latest-ssl&os=win64&lang=ru",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "*thunderbird*setup*.msi",
+    "DirectoryName": "other/internet/thunderbird",
+    "SoftwareName": "thunderbird",
+    "DownloadUrl": "https://download.mozilla.org/?product=thunderbird-msi-latest-ssl&os=win64&lang=ru",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "*chrome*64.msi",
-    "Dir": "internet/chrome",
-    "Name": "chrome",
-    "Url": "https://dl.google.com/edgedl/chrome/install/GoogleChromeStandaloneEnterprise64.msi",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "*chrome*64.msi",
+    "DirectoryName": "internet/chrome",
+    "SoftwareName": "chrome",
+    "DownloadUrl": "https://dl.google.com/edgedl/chrome/install/GoogleChromeStandaloneEnterprise64.msi",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "*windowsadmincenter*.exe",
-    "Dir": "other/soft/windowsadmincenter",
-    "Name": "windowsadmincenter",
-    "Url": "https://aka.ms/wacdownload",
-    "Arg": "/qr /norestart /l* log.txt SSL_CERTIFICATE_OPTION=generate"
+    "SearchPattern": "*windowsadmincenter*.exe",
+    "DirectoryName": "other/soft/windowsadmincenter",
+    "SoftwareName": "windowsadmincenter",
+    "DownloadUrl": "https://aka.ms/wacdownload",
+    "InstallArgs": "/qr /norestart /l* log.txt SSL_CERTIFICATE_OPTION=generate"
   },
   {
-    "Pattern": "*cloudflare_warp*.msi",
-    "Dir": "other/internet/cloudflare_warp",
-    "Name": "cloudflare_warp",
-    "Url": "https://1111-releases.cloudflareclient.com/win/latest",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "*cloudflare_warp*.msi",
+    "DirectoryName": "other/internet/cloudflare_warp",
+    "SoftwareName": "cloudflare_warp",
+    "DownloadUrl": "https://1111-releases.cloudflareclient.com/win/latest",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "wumt.zip",
-    "Dir": "soft/activation",
-    "Name": "wumt",
-    "Url": "https://drive.google.com/file/d/0BwJH2CazcjsINFZFc1pVdk9mNHM/view?usp=sharing",
-    "PatternSetup": "*wumt_x64.exe",
-    "OneExe2Desktop":true
+    "SearchPattern": "wumt.zip",
+    "DirectoryName": "soft/activation",
+    "SoftwareName": "wumt",
+    "DownloadUrl": "https://drive.google.com/file/d/0BwJH2CazcjsINFZFc1pVdk9mNHM/view?usp=sharing",
+    "SetupPattern": "*wumt_x64.exe",
+    "ExtractSingleExe": true
   },
   {
-    "Pattern": "*softether-vpnclient-v*-rtm-*-windows-x86_x64-intel.exe",
-    "Dir": "other/internet/softethervpn",
-    "Name": "softethervpn",
-    "Url": "#softethervpnUrl"
+    "SearchPattern": "*softether-vpnclient-v*-rtm-*-windows-x86_x64-intel.exe",
+    "DirectoryName": "other/internet/softethervpn",
+    "SoftwareName": "softethervpn",
+    "DownloadUrl": "#softethervpnUrl"
   },
   {
-    "Pattern": "*softether-vpnserver_vpnbridge-v*-rtm-*-windows-x86_x64-intel.exe",
-    "Dir": "other/internet/softethervpn_server",
-    "Name": "softethervpn_server",
-    "Url": "#softethervpnServerUrl"
+    "SearchPattern": "*softether-vpnserver_vpnbridge-v*-rtm-*-windows-x86_x64-intel.exe",
+    "DirectoryName": "other/internet/softethervpn_server",
+    "SoftwareName": "softethervpn_server",
+    "DownloadUrl": "#softethervpnServerUrl"
   },
   {
-    "Pattern": "*PowerShell-*-win-x64.msi",
-    "Dir": "other/soft/powershell",
-    "Name": "powershell",
-    "Url": "https://github.com/PowerShell/PowerShell/releases/latest",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "*PowerShell-*-win-x64.msi",
+    "DirectoryName": "other/soft/powershell",
+    "SoftwareName": "powershell",
+    "DownloadUrl": "https://github.com/PowerShell/PowerShell/releases/latest",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "Imagine_*_x64_Unicode.exe",
-    "Dir": "media/imagine",
-    "Name": "imagine",
-    "Url": "https://www.nyam.pe.kr/dev/imagine/",
-    "Arg": "/S"
+    "SearchPattern": "Imagine_*_x64_Unicode.exe",
+    "DirectoryName": "media/imagine",
+    "SoftwareName": "imagine",
+    "DownloadUrl": "https://www.nyam.pe.kr/dev/imagine/",
+    "InstallArgs": "/S"
   },
   {
-    "Pattern": "*tsetup-x64.*.exe",
-    "Dir": "other/internet/telegram",
-    "Name": "telegram",
-    "Url": "https://github.com/telegramdesktop/tdesktop/releases/latest",
-    "Arg": "/verysilent /norestart"
+    "SearchPattern": "*tsetup-x64.*.exe",
+    "DirectoryName": "other/internet/telegram",
+    "SoftwareName": "telegram",
+    "DownloadUrl": "https://github.com/telegramdesktop/tdesktop/releases/latest",
+    "InstallArgs": "/verysilent /norestart"
   },
   {
-    "Pattern": "install-Podpis.exe",
-    "Dir": "by/podpis",
-    "Name": "podpis",
-    "Url": "https://app.podpis.by/media/agent/install-Podpis.exe",
-    "Arg": "/quiet /norestart"
+    "SearchPattern": "install-Podpis.exe",
+    "DirectoryName": "by/podpis",
+    "SoftwareName": "podpis",
+    "DownloadUrl": "https://app.podpis.by/media/agent/install-Podpis.exe",
+    "InstallArgs": "/quiet /norestart"
   },
   {
-    "Pattern": "*psiphon*.exe",
-    "Dir": "other/vpn/psiphon",
-    "Name": "psiphon",
-    "Url": "https://psiphon.ca/ru/download-store.html",
-    "OneExe2Desktop":true
+    "SearchPattern": "*psiphon*.exe",
+    "DirectoryName": "other/vpn/psiphon",
+    "SoftwareName": "psiphon",
+    "DownloadUrl": "https://psiphon.ca/ru/download-store.html",
+    "ExtractSingleExe": true
   }
 ]
