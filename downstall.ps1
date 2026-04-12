@@ -30,30 +30,28 @@ param(
 )
 
 DynamicParam {
-    $ParameterName = 'Install'
     $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-    $AttributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
     
-    $ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
-    $ParameterAttribute.Mandatory = $false
-    $ParameterAttribute.Position = 1
-    $AttributeCollection.Add($ParameterAttribute)
-  
     $SoftwareSet = @()
-    if (Test-Path "$PSScriptRoot\soft.json") {
-        $SoftwareSet += (Get-Content -Path "$PSScriptRoot\soft.json" | ConvertFrom-Json).SoftwareName
+    foreach ($file in @("soft.json", "soft+.json")) {
+        if (Test-Path "$PSScriptRoot\$file") {
+            $SoftwareSet += (Get-Content "$PSScriptRoot\$file" -Raw | ConvertFrom-Json).SoftwareName
+        }
     }
-    if (Test-Path "$PSScriptRoot\soft+.json") {
-        $SoftwareSet += (Get-Content -Path "$PSScriptRoot\soft+.json" | ConvertFrom-Json).SoftwareName
-    }
-  
+
     if ($SoftwareSet.Count -gt 0) {
-        $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($SoftwareSet)
-        $AttributeCollection.Add($ValidateSetAttribute)
+        $Attr = New-Object System.Management.Automation.ParameterAttribute
+        $Attr.Mandatory = $false
+        $Attr.Position = 1
+        
+        $ValidateSet = New-Object System.Management.Automation.ValidateSetAttribute($SoftwareSet)
+        $AttrCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+        $AttrCollection.Add($Attr)
+        $AttrCollection.Add($ValidateSet)
+
+        $RuntimeParam = New-Object System.Management.Automation.RuntimeDefinedParameter('Install', [string[]], $AttrCollection)
+        $RuntimeParameterDictionary.Add('Install', $RuntimeParam)
     }
-  
-    $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string[]], $AttributeCollection)
-    $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
     return $RuntimeParameterDictionary
 }
 
@@ -91,35 +89,106 @@ begin {
     }
 
     function Test-FileUpdateRequired {
-        param ([String]$LocalFilePath, [String]$DownloadUrl)
+    param (
+        [String]$LocalFilePath, 
+        [String]$DownloadUrl
+    )
 
-        $LocalFile = Get-Item -Path $LocalFilePath -ErrorAction SilentlyContinue
-        if (-not $LocalFile) { return $true }
+    $LocalFile = Get-Item -Path $LocalFilePath -ErrorAction SilentlyContinue
+    if (-not $LocalFile) { return $true }
 
-        $OldSize = $LocalFile.Length
-        try {
-            $SkipCheck = if ($PSVersionTable.PSVersion.Major -ge 6) { @{ SkipCertificateCheck = $true } } else { @{} }
-            $WebResponse = Invoke-WebRequest -Uri $DownloadUrl -Method Head -Headers @{Referer = $DownloadUrl } -UserAgent $Global:UserAgent @SkipCheck -ErrorAction Stop
-            $NewSize = $WebResponse.Headers.'Content-Length'
-        }
-        catch {
-            $NewSize = (Invoke-WebRequest -Uri $DownloadUrl -Method Head -Headers @{Referer = $DownloadUrl } -UserAgent $Global:UserAgent -ErrorAction SilentlyContinue).Headers.'Content-Length'
-        }
-            
-        if ([string]::IsNullOrEmpty($NewSize)) {
-            Write-Host "The new size is unknown, skip download."
-            return $false
-        }
-        
-        $NewSizeInt = if ($NewSize -is [Array]) { [int]$NewSize[0] } else { [int]$NewSize }
-        
-        if (($OldSize -eq $NewSizeInt) -or ($NewSizeInt -eq 0)) {
-            Write-Host "Sizes match. Skip download."
-            return $false
-        } 
-        
-        return $true
+    $OldSize = $LocalFile.Length
+    
+    $SkipCheck = if ($PSVersionTable.PSVersion.Major -ge 6) { @{ SkipCertificateCheck = $true } } else { @{} }
+    $CommonHeaders = @{ Referer = $DownloadUrl }
+
+    # Attempt 1: HEAD request
+    try {
+        $WebResponse = Invoke-WebRequest -Uri $DownloadUrl -Method Head -Headers $CommonHeaders -UserAgent $Global:UserAgent @SkipCheck -ErrorAction Stop
+        $NewSize = $WebResponse.Headers.'Content-Length'
     }
+    catch {
+        # Extract HTTP Status Code cross-platform (works in both PS 5.1 and PS 7+)
+        $StatusCode = $null
+        if ($_.Exception.Response) {
+            $StatusCode = [int]$_.Exception.Response.StatusCode # PS 5.1
+        } elseif ($null -ne $_.Exception.StatusCode) {
+            $StatusCode = [int]$_.Exception.StatusCode # PS 7+
+        }
+
+        # If it is an HTTP error (4xx or 5xx), the server might be blocking HEAD requests. Try GET fallback.
+        if ($StatusCode -match "^(4|5)\d\d$") {
+            Write-Warning "Test-FileUpdateRequired: HEAD failed for '$($LocalFile.Name)' (HTTP $StatusCode), trying GET..."
+            
+            try {
+                # IMPORTANT: Request only 1 byte to prevent downloading the entire file into RAM
+                $GetHeaders = $CommonHeaders.Clone()
+                $GetHeaders['Range'] = "bytes=0-0"
+                
+                $GetResponse = Invoke-WebRequest -Uri $DownloadUrl -Method Get -Headers $GetHeaders -UserAgent $Global:UserAgent @SkipCheck -MaximumRedirection 5 -ErrorAction Stop
+                
+                # A successful Range request returns HTTP 206 and a Content-Range header (e.g., "bytes 0-0/1234567")
+                if ($GetResponse.Headers.'Content-Range') {
+                    $NewSize = ($GetResponse.Headers.'Content-Range' -split '/')[-1]
+                } else {
+                    $NewSize = $GetResponse.Headers.'Content-Length'
+                }
+            }
+            catch {
+                Write-Warning "Test-FileUpdateRequired: GET fallback failed: $($_.Exception.Message)"
+                return $false
+            }
+        } 
+        else {
+            # Network error (Timeout, DNS resolution failure, offline)
+            Write-Warning "Test-FileUpdateRequired: Network error for '$($LocalFile.Name)': $($_.Exception.Message)"
+            Write-Warning "Skipping download - cannot verify file size."
+            return $false
+        }
+    }
+
+    if ([string]::IsNullOrEmpty($NewSize)) {
+        Write-Warning "Test-FileUpdateRequired: Content-Length unknown for '$($LocalFile.Name)', skipping download."
+        return $false
+    }
+
+    # IMPORTANT: Use [long] (Int64) to prevent overflow exceptions on files larger than 2GB
+    $NewSizeLong = if ($NewSize -is [Array]) { [long]$NewSize[0] } else { [long]$NewSize }
+
+    if ($OldSize -ge 1GB) {
+        $FormattedOldSize = "{0:N2} GB" -f ($OldSize / 1GB)
+    }
+    elseif ($OldSize -ge 1MB) {
+        $FormattedOldSize = "{0:N2} MB" -f ($OldSize / 1MB)
+    }
+    elseif ($OldSize -ge 1KB) {
+        $FormattedOldSize = "{0:N2} KB" -f ($OldSize / 1KB)
+    }
+    else {
+        $FormattedOldSize = "$OldSize bytes"
+    }
+
+    if (($OldSize -eq $NewSizeLong) -or ($NewSizeLong -eq 0)) {
+        Write-Host "Skip download '$($LocalFile.Name)' - Sizes match ($FormattedOldSize)."
+        return $false
+    }
+
+    if ($NewSizeLong -ge 1GB) {
+        $FormattedNewSizeLong = "{0:N2} GB" -f ($NewSizeLong / 1GB)
+    }
+    elseif ($NewSizeLong -ge 1MB) {
+        $FormattedNewSizeLong = "{0:N2} MB" -f ($NewSizeLong / 1MB)
+    }
+    elseif ($NewSizeLong -ge 1KB) {
+        $FormattedNewSizeLong = "{0:N2} KB" -f ($NewSizeLong / 1KB)
+    }
+    else {
+        $FormattedNewSizeLong = "$NewSizeLong bytes"
+    }
+
+    Write-Host "Size mismatch: '$($SoftwareItem.SoftwareName)' - local=$FormattedOldSize, remote=$FormattedNewSizeLong. Download required."
+    return $true
+}
 
     function Get-AbsoluteUri {
         param ([String]$DownloadUrl)
@@ -133,8 +202,8 @@ begin {
             }
         }
         catch {
-            Write-Warning "Get-AbsoluteUri Error: $($_.Exception.Message)"
-            return $DownloadUrl 
+            Write-Warning "'$($SoftwareItem.SoftwareName)' - Error: $($_.Exception.Message)"   
+            return $null
         }
         
         $ResolvedUrl = $Response.BaseResponse.RequestMessage.RequestUri.AbsoluteUri
@@ -443,7 +512,7 @@ begin {
                 { $_ -match "^softethervpn" } {
                     $BaseUri = 'http://www.softether-download.com'
                     $Links = (Invoke-WebRequest -Uri "$BaseUri/files/softether/" -UseBasicParsing -UserAgent $Global:UserAgent).links.href
-                    $LatestNode = [string](@($Links | Where-Object { $_ -match "v\d+-rtm-.*-tree" } | Sort-Object)[-1])
+                    $LatestNode = [string](@($Links | Where-Object { $_ -match "v(\d+\.\d+-\d+)-rtm-.*-tree" } | Sort-Object)[-1])
                     
                     if ($Soft.SoftwareName -eq "softethervpn") {
                         $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#softethervpnUrl', "$BaseUri$LatestNode" + "Windows/SoftEther_VPN_Client/")
@@ -512,30 +581,32 @@ begin {
             }
             else {
                 # Force strictly to string to prevent array injection
-                [string]$AbsUrl = Get-AbsoluteUri -DownloadUrl $DownloadUrl
+                if (-not ([string]$AbsUrl = Get-AbsoluteUri -DownloadUrl $DownloadUrl)) { return }
                 $DownloadUrl = $AbsUrl -replace "/tag/", "/expanded_assets/"
                 $DownloadLink = $DownloadUrl
                 
                 $SkipCheck = if ($PSVersionTable.PSVersion.Major -ge 6) { @{ SkipCertificateCheck = $true } } else { @{} }
                 $WebResponse = Invoke-WebRequest -Uri $DownloadUrl -UseBasicParsing -DisableKeepAlive -UserAgent $Global:UserAgent @SkipCheck -ErrorAction SilentlyContinue
 
-                if ($WebResponse) {
-                    $Pattern = if ($SoftwareItem.SoftwareName -eq "imagine") { "*download.php?arch=x64&unicode=1&full=0&setup=1*" } else { $SoftwareItem.SearchPattern }
-                    $FoundLinks = @($WebResponse.links.href | Where-Object { $_ -like $Pattern })
+                $Pattern = if ($SoftwareItem.SoftwareName -eq "imagine") { "*download.php?arch=x64&unicode=1&full=0&setup=1*" } else { $SoftwareItem.SearchPattern }
+                $FoundLinks = @($WebResponse.links.href | Where-Object { $_ -like $Pattern })
+        
+                if ($FoundLinks.Count -gt 0) {
+                    $DownloadLink = [string]$FoundLinks[0]
+                    if ($SoftwareItem.SoftwareName -eq "vvoddpu" -and $FoundLinks[0] -like "*0.zip") { $DownloadLink = [string]$FoundLinks[1] }
+                    if ($SoftwareItem.SoftwareName -eq "victoria") { $DownloadLink = [string]$FoundLinks[1].Substring($FoundLinks[1].LastIndexOf("https:")) }
             
-                    if ($FoundLinks.Count -gt 0) {
-                        $DownloadLink = [string]$FoundLinks[0]
-                        if ($SoftwareItem.SoftwareName -eq "vvoddpu" -and $FoundLinks[0] -like "*0.zip") { $DownloadLink = [string]$FoundLinks[1] }
-                        if ($SoftwareItem.SoftwareName -eq "victoria") { $DownloadLink = [string]$FoundLinks[1].Substring($FoundLinks[1].LastIndexOf("https:")) }
-              
-                        if (-not $DownloadLink.StartsWith("http")) {
-                            $BaseHost = if ($DownloadLink.StartsWith("/")) { $DownloadUrl.Substring(0, $DownloadUrl.IndexOf("/", 8)) } else { $DownloadUrl.Substring(0, $DownloadUrl.IndexOf("/", 8) + 1) }
-                            $DownloadLink = $BaseHost + $DownloadLink
+                    if (-not $DownloadLink.StartsWith("http")) {
+                        if ($DownloadLink.Contains("/")) {
+                            $DownloadLink = if ($DownloadLink.StartsWith("/")) { $DownloadUrl.Substring(0, $DownloadUrl.IndexOf("/", 8)) + $DownloadLink } else { $DownloadUrl.Substring(0, $DownloadUrl.IndexOf("/", 8) + 1) + $DownloadLink }
+                        }
+                        else {
+                            $DownloadLink = $DownloadUrl + $DownloadLink
                         }
                     }
-                    elseif ($DownloadLink -match '//github\.com/') {
-                        $DownloadLink = $null
-                    }
+                }
+                elseif ($DownloadLink -match '//github\.com/') {
+                    $DownloadLink = $null
                 }
         
                 if ($DownloadLink) {
@@ -589,7 +660,9 @@ begin {
 # ==========================================
 process {
     $Host.UI.RawUI.WindowTitle = "Downstall script 4 Windows $([char]0x00A9) poljik 2019-2026"
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+ 
+    # Enforce TLS 1.2 for PS 5.1 compatibility with modern HTTPS servers
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
     $ProgressPreference = "SilentlyContinue"
 
     if ($DownloadOnly -and $InstallOnly) {
