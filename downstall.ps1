@@ -354,7 +354,7 @@ begin {
         # Standard Installation
         $BypassInstall = $false
         if (Test-Path "$PSScriptRoot/downstall+.ps1") {
-            $BypassInstall = Invoke-Expression -Command "$PSScriptRoot/downstall+.ps1"
+            $BypassInstall = & "$PSScriptRoot/downstall+.ps1"
         }
 
         if (-not $BypassInstall) {
@@ -498,25 +498,31 @@ begin {
                     }
                     $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#irfanviewVersion', $IrfanViewVersion)
                 }
-                "notepad++" {
-                    $Links = (Invoke-WebRequest -Uri 'https://notepad-plus-plus.org/downloads/' -UseBasicParsing -UserAgent $Global:UserAgent).links.href
-                    $NotepadUrl = [string](@($Links | Where-Object { $_ -match "^https://notepad-plus-plus.org/downloads/" })[0])
-                    $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#notepadppUrl', $NotepadUrl)
-                }
                 "opera" {
                     $BaseUri = 'https://get.geo.opera.com/pub/opera/desktop/'
                     $Links = (Invoke-WebRequest -Uri $BaseUri -UseBasicParsing -UserAgent $Global:UserAgent).links.href
-                    $LatestVer = [string](@($Links | Where-Object { $_ -match "^1\d{2}\." } | Sort-Object)[-1])
+    
+                    $LatestVer = @($Links | Where-Object { $_ -match "^\d+\.\d+\.\d+\.\d+/?$" }) | 
+                    Sort-Object -Property { [version]($_ -replace '/', '') } | 
+                    Select-Object -Last 1
+        
                     $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#operaUrl', "$BaseUri$LatestVer" + "win/")
                 }
                 { $_ -match "^softethervpn" } {
                     $BaseUri = 'http://www.softether-download.com'
                     $Links = (Invoke-WebRequest -Uri "$BaseUri/files/softether/" -UseBasicParsing -UserAgent $Global:UserAgent).links.href
-                    $LatestNode = [string](@($Links | Where-Object { $_ -match "v(\d+\.\d+-\d+)-rtm-.*-tree" } | Sort-Object)[-1])
                     
+                    # Filter RTM versions and sort them correctly by extracting the embedded date (YYYY.MM.DD)
+                    $LatestNode = @($Links | Where-Object { $_ -match "v\d+\.\d+-\d+-rtm-(\d{4}\.\d{2}\.\d{2})-tree" }) | 
+                    Sort-Object -Property { 
+                        $DateStr = [regex]::Match($_, "rtm-(\d{4}\.\d{2}\.\d{2})-tree").Groups[1].Value
+                        [datetime]::ParseExact($DateStr, "yyyy.MM.dd", $null) 
+                    } | Select-Object -Last 1
+
                     if ($Soft.SoftwareName -eq "softethervpn") {
                         $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#softethervpnUrl', "$BaseUri$LatestNode" + "Windows/SoftEther_VPN_Client/")
-                    } else {
+                    }
+                    else {
                         $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#softethervpnServerUrl', "$BaseUri$LatestNode" + "Windows/SoftEther_VPN_Server_and_VPN_Bridge/")
                     }
                 }
@@ -623,7 +629,7 @@ begin {
                 }
             }
 
-            if ($SoftwareItem.SoftwareName -eq "platelschik_eaes" -and $DownloadLink) { $DownloadLink = [uri]::EscapeUriString($DownloadLink) }
+            if ($SoftwareItem.SoftwareName -eq "platelschik_eaes" -and $DownloadLink) { $DownloadLink = [System.Uri]::EscapeDataString($DownloadLink) }
 
             # Download Logic
             if ($LinkFileName -and ($CurrentFileName -ne $LinkFileName -or (Test-FileUpdateRequired -LocalFilePath "$FilePath\$CurrentFileName" -DownloadUrl $DownloadLink))) {
@@ -671,7 +677,7 @@ process {
         exit
     }
   
-    while (-not $InstallOnly -and -not (Test-Connection -Count 1 -ComputerName 8.8.8.8 -Quiet)) {
+    while (-not $InstallOnly -and -not ([System.Net.Dns]::GetHostAddresses('google.com'))) {
         $InstallOnly = $true
         Write-Warning "Internet is missing, -InstallOnly activated"
     }

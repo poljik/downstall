@@ -348,7 +348,7 @@
     "SearchPattern": "*npp.*.Installer.x64.exe",
     "DirectoryName": "other/soft/notepad++",
     "SoftwareName": "notepad++",
-    "DownloadUrl": "#notepadppUrl",
+    "DownloadUrl": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest",
     "InstallArgs": "/S"
   },
   {
