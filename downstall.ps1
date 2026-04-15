@@ -249,11 +249,11 @@ begin {
         if (Test-Path "$RootDirectory\setup.exe") { return }
 
         "HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\ExperimentConfigs\Ecs" | ForEach-Object {
-            New-Item -Path $_ -ItemType Directory -Force > $null
+            $Null = New-Item -Path $_ -ItemType Directory -Force
             Set-ItemProperty -Path $_ -Name CountryCode -Value "std::wstring|US" -Force
         }
   
-        if (-not (Test-Path $SetupDirectory)) { New-Item $SetupDirectory -ItemType Directory > $null }
+        if (-not (Test-Path $SetupDirectory)) { $Null = New-Item $SetupDirectory -ItemType Directory }
         
         Push-Location -Path $SetupDirectory
         try {
@@ -362,37 +362,89 @@ begin {
             $ExtractSingleExe = [bool]$SoftwareItem.ExtractSingleExe
 
             if ($IsArchive) {
-                if (-not (Test-Path "$Env:Programfiles\WinRAR\Winrar.exe")) {
-                    Write-Warning "You need to install WinRar first!"
-                    return
-                }
-
-                if ($ExtractSingleExe -and $SoftwareItem.SetupPattern) {
-                    Start-Process -FilePath "$Env:Programfiles\WinRAR\Winrar.exe" -ArgumentList "e -o+", "`"$FullFilePath`"", $SoftwareItem.SetupPattern, "$Env:PUBLIC\Desktop" -WindowStyle Hidden -Wait
-                }
-                elseif ($SoftwareItem.SetupPattern) {
-                    $TempDir = "$Env:Temp\temp_downstall"
-                    New-Item -ItemType Directory -Force -Path $TempDir > $null
-                    $WinRarArgs = if ($SoftwareItem.ArchiveArgs) { "x -o+ $($SoftwareItem.ArchiveArgs)" } else { "x -o+" }
-                    Start-Process -FilePath "$Env:Programfiles\WinRAR\Winrar.exe" -ArgumentList $WinRarArgs, "`"$FullFilePath`"", $TempDir -WindowStyle Hidden -Wait
-                    
-                    $ExtractedSetup = Get-ChildItem -Path "$TempDir\*" -Include $SoftwareItem.SetupPattern -Recurse -Force | Select-Object -First 1
-                    
-                    if ($ExtractedSetup) {
-                        $LaunchArgs = if ($SoftwareItem.InstallArgs) { $SoftwareItem.InstallArgs } else { "" }
-                        Start-Process -FilePath $ExtractedSetup.FullName -ArgumentList $LaunchArgs -Wait
-                        
-                        if ($SoftwareName -eq "avest") {
-                            $AvestSetup = Get-ChildItem -Path "$TempDir\*" -Include "setupAvCSPBel*.exe" -Recurse -Force
-                            if ($AvestSetup) { Start-Process -FilePath $AvestSetup.FullName -ArgumentList "/verysilent /devices=avToken,avPass,iKey" -Wait }
-                        }
-                    }
-                    Remove-Item $TempDir -Recurse -Force
+                # Determine file extension
+                $Extension = [System.IO.Path]::GetExtension($FileName).ToLower()
+                
+                # Determine extraction destination
+                $DestDir = if ($SoftwareItem.SetupPattern) {
+                    $TempDir = "$Env:Temp\temp_downstall_$($SoftwareItem.SoftwareName)"
+                    $Null = New-Item -ItemType Directory -Force -Path $TempDir
+                    $TempDir
                 }
                 else {
                     $DesktopDir = "$Env:PUBLIC\Desktop\$SoftwareName"
-                    New-Item -ItemType Directory -Force -Path $DesktopDir > $null
-                    Start-Process -FilePath "$Env:Programfiles\WinRAR\Winrar.exe" -ArgumentList "x -o+", "`"$FullFilePath`"", $DesktopDir -WindowStyle Hidden -Wait
+                    $Null = New-Item -ItemType Directory -Force -Path $DesktopDir
+                    $DesktopDir
+                }
+
+                # 1. EXTRACT BASED ON FORMAT
+                $ExtractSuccess = $false
+                switch -Regex ($Extension) {
+                    "\.zip$" {
+                        Write-Host "Extracting ZIP using built-in Expand-Archive..."
+                        Expand-Archive -Path $FullFilePath -DestinationPath $DestDir -Force
+                        $ExtractSuccess = $true
+                    }
+                    "\.(gz|tgz|tar)$" {
+                        Write-Host "Extracting GZ/TAR using built-in Windows tar.exe..."
+                        Start-Process -FilePath "tar.exe" -ArgumentList "-xf `"$FullFilePath`" -C `"$DestDir`"" -Wait -NoNewWindow
+                        $ExtractSuccess = $true
+                    }
+                    "\.(rar|7z)$" {
+                        # Look for WinRAR or 7-Zip (Windows 10 lacks native support for these formats)
+                        $WinRarPath = "$Env:Programfiles\WinRAR\Winrar.exe"
+                        $7zPath = "$Env:Programfiles\7-Zip\7z.exe"
+                        
+                        if (Test-Path $WinRarPath) {
+                            $WinRarArgs = if ($SoftwareItem.ArchiveArgs) { "x -o+ $($SoftwareItem.ArchiveArgs)" } else { "x -o+" }
+                            Start-Process -FilePath $WinRarPath -ArgumentList "$WinRarArgs `"$FullFilePath`" `"$DestDir`"" -WindowStyle Hidden -Wait
+                            $ExtractSuccess = $true
+                        }
+                        elseif (Test-Path $7zPath) {
+                            Start-Process -FilePath $7zPath -ArgumentList "x `"$FullFilePath`" -o`"$DestDir`" -y" -WindowStyle Hidden -Wait
+                            $ExtractSuccess = $true
+                        }
+                        else {
+                            Write-Warning "Cannot extract '$Extension'. Please install WinRAR or 7-Zip first! (Windows 10 lacks native support)."
+                        }
+                    }
+                    default {
+                        Write-Warning "Unknown archive format: $Extension"
+                    }
+                }
+
+                # 2. POST-EXTRACTION ACTIONS
+                if ($ExtractSuccess -and $SoftwareItem.SetupPattern) {
+                    $ExtractedItems = Get-ChildItem -Path "$DestDir\*" -Include $SoftwareItem.SetupPattern -Recurse -Force
+                    
+                    if ($ExtractedItems) {
+                        $TargetFile = $ExtractedItems | Select-Object -First 1
+                        
+                        if ($ExtractSingleExe) {
+                            # If only extraction is needed (e.g., Portable version to Desktop)
+                            Copy-Item -Path $TargetFile.FullName -Destination "$Env:PUBLIC\Desktop" -Force
+                            Write-Host "Copied $($TargetFile.Name) to Desktop."
+                        }
+                        else {
+                            # Normal mode: run the installer
+                            $LaunchArgs = if ($SoftwareItem.InstallArgs) { $SoftwareItem.InstallArgs } else { "" }
+                            Start-Process -FilePath $TargetFile.FullName -ArgumentList $LaunchArgs -Wait
+                            
+                            # Specific action for Avest
+                            if ($SoftwareName -eq "avest") {
+                                $AvestSetup = Get-ChildItem -Path "$DestDir\*" -Include "setupAvCSPBel*.exe" -Recurse -Force | Select-Object -First 1
+                                if ($AvestSetup) { 
+                                    Start-Process -FilePath $AvestSetup.FullName -ArgumentList "/verysilent /devices=avToken,avPass,iKey" -Wait 
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        Write-Warning "Setup pattern '$($SoftwareItem.SetupPattern)' not found in extracted archive."
+                    }
+                    
+                    # Clean up temp directory
+                    Remove-Item $DestDir -Recurse -Force
                 }
             }
             elseif ($ExtractSingleExe) {
@@ -408,7 +460,8 @@ begin {
                 # PROTECTION: Strict check for the MZ magic bytes in executables
                 if ($FileName -match "\.exe$") {
                     $Header = Get-Content -Path $FullFilePath -TotalCount 2 -Encoding Byte -ErrorAction SilentlyContinue
-                    if ($Header -and ($Header[0] -ne 77 -or $Header[1] -ne 90)) { # MZ = 77 90
+                    if ($Header -and ($Header[0] -ne 77 -or $Header[1] -ne 90)) {
+                        # MZ = 77 90
                         Write-Warning "File '$FileName' is not a valid executable (Missing MZ header). Download was corrupted or blocked by bot-protection."
                         return
                     }
@@ -422,7 +475,7 @@ begin {
         # Post-Installation Actions
         switch ($SoftwareName) {
             "true_image" {
-                Set-Service afcdpsrv, syncagentsrv -StartupType Disabled -PassThru -Confirm:$false -ErrorAction SilentlyContinue | Stop-Service -PassThru > $null
+                Set-Service afcdpsrv, syncagentsrv -StartupType Disabled -PassThru -Confirm:$false -ErrorAction SilentlyContinue | Stop-Service > $null
             }
             "total_commander" {
                 $Dest = if ($Script:SystemArchitecture -eq 64) { "${Env:Programfiles(x86)}\Total Commander" } else { "$Env:Programfiles\Total Commander" }
@@ -432,11 +485,11 @@ begin {
                 $FarProfile = "$Env:APPDATA\Far Manager\Profile"
                 if ($LuaFile = Get-ChildItem -Path $FilePath -Include Panel.Esc.lua -Recurse -Force -ErrorAction Ignore) {
                     $MacroPath = "$FarProfile\Macros\scripts\"
-                    New-Item -Path $MacroPath -ItemType Directory -Force > $null
+                    $Null = New-Item -Path $MacroPath -ItemType Directory -Force
                     Copy-Item -Path $LuaFile -Destination $MacroPath -Force
                 }
                 if ($DbFile = Get-ChildItem -Path $FilePath -Include generalconfig.db -Recurse -Force -ErrorAction Ignore) {
-                    New-Item -Path $FarProfile -ItemType Directory -Force > $null
+                    $Null = New-Item -Path $FarProfile -ItemType Directory -Force
                     Copy-Item -Path $DbFile -Destination $FarProfile -Force
                 }
                 
@@ -451,7 +504,7 @@ begin {
                 $AcrobatShortcut = "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Adobe Acrobat.lnk"
                 if (Test-Path $AcrobatShortcut) { Copy-Item -Path $AcrobatShortcut -Destination $Env:PUBLIC\Desktop -Force }
                 $RegPath = "HKLM:\Software\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown"
-                New-Item -Path $RegPath -ItemType Directory -Force > $null
+                $Null = New-Item -Path $RegPath -ItemType Directory -Force
                 Set-ItemProperty -Path $RegPath -Name bAcroSuppressUpsell -Value 1 -Force
             }
             "viber" {
@@ -493,7 +546,7 @@ begin {
                 { $_ -match "^irfanview" } {
                     if (-not $IrfanViewVersion) {
                         $HtmlContent = (Invoke-WebRequest -Uri "https://www.irfanview.com/" -UserAgent $Global:UserAgent).Content
-                        $Match = [regex]::Match($HtmlContent, "<span>Version\s*([\d\.]+)</span>")
+                        $Match = [regex]::Match($HtmlContent, "(?i)version\s*([\d\.]+)")
                         if ($Match.Success) { $IrfanViewVersion = $Match.Groups[1].Value.Replace(".", "") }
                     }
                     $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#irfanviewVersion', $IrfanViewVersion)
@@ -634,7 +687,7 @@ begin {
             # Download Logic
             if ($LinkFileName -and ($CurrentFileName -ne $LinkFileName -or (Test-FileUpdateRequired -LocalFilePath "$FilePath\$CurrentFileName" -DownloadUrl $DownloadLink))) {
                 Write-Warning "+$LinkFileName"
-                if (-not (Test-Path $FilePath)) { New-Item $FilePath -ItemType Directory > $null }
+                if (-not (Test-Path $FilePath)) { $Null = New-Item $FilePath -ItemType Directory }
 
                 try {
                     Invoke-WebRequest -Uri $DownloadLink -OutFile "$FilePath\$LinkFileName" -Headers @{Referer = $DownloadLink } -UserAgent $Global:UserAgent -ErrorAction Stop
