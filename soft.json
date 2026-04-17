@@ -25,6 +25,19 @@
     "DownloadUrl": "https://disk.yandex.ru/d/Ex9XjxqrhnKNWg",
     "InstallArgs": "/quiet /norestart",
     "SetupPattern": "acro*.msi",
+    "PostInstall": [
+      {
+        "Action": "Shortcut",
+        "From": "StartMenu",
+        "File": "Adobe Acrobat.lnk"
+      },
+      {
+        "Action": "Registry",
+        "Path": "HKLM:\\Software\\Policies\\Adobe\\Acrobat Reader\\DC\\FeatureLockDown",
+        "Name": "bAcroSuppressUpsell",
+        "Value": 1
+      }
+    ],
     "Comment": "# original Acrobat Reader: AcroRdrDC*.exe /sAll /msi /norestart /quiet ALLUSERS=1 EULA_ACCEPT=YES # updates: msiexec.exe /update AcroRdrDC*.msp /quiet /norestart"
   },
   {
@@ -78,14 +91,39 @@
     "DirectoryName": "soft/far",
     "SoftwareName": "far",
     "DownloadUrl": "https://github.com/FarGroup/FarManager/releases/latest",
-    "InstallArgs": "/quiet /norestart"
+    "InstallArgs": "/quiet /norestart",
+    "PostInstall": [
+      {
+        "Action": "Copy",
+        "Source": "Panel.Esc.lua",
+        "Dest": "$Env:APPDATA\\Far Manager\\Profile\\Macros\\scripts"
+      },
+      {
+        "Action": "Copy",
+        "Source": "generalconfig.db",
+        "Dest": "$Env:APPDATA\\Far Manager\\Profile"
+      },
+      {
+        "Action": "Shortcut",
+        "From": "StartMenu",
+        "File": "Far Manager 3*.lnk"
+      }
+    ]
   },
   {
     "SearchPattern": "*EDeclaration*(Include_JRE).exe",
     "DirectoryName": "by/edeclaration",
     "SoftwareName": "edeclaration",
     "DownloadUrl": "https://lkfl.portal.nalog.gov.by/web/guest/arm_soft",
-    "InstallArgs": "/verysilent /norestart"
+    "InstallArgs": "/verysilent /norestart",
+    "PostInstall": [
+      {
+        "Action": "Shortcut",
+        "From": "StartMenu",
+        "File": "Запустить EDeclaration.lnk",
+        "Rename": "EDeclaration.lnk"
+      }
+    ]
   },
   {
     "SearchPattern": "*AvPKISetup*bel*.zip",
@@ -106,7 +144,19 @@
     "DirectoryName": "soft/winrar",
     "SoftwareName": "winrar",
     "DownloadUrl": "https://www.rarlab.com/download.htm",
-    "InstallArgs": "/s"
+    "InstallArgs": "/s",
+    "PostInstall": [
+      {
+        "Action": "Copy",
+        "Source": "rarreg.key",
+        "Dest": "$Env:ProgramFiles\\WinRAR"
+      },
+      {
+        "Action": "Shortcut",
+        "From": "StartMenu",
+        "File": "WinRAR.lnk"
+      }
+    ]
   },
   {
     "SearchPattern": "*syncthing*windows-amd64*.zip",
@@ -143,7 +193,7 @@
     "DownloadUrl": "https://raw.githubusercontent.com/nyam1003/imagine/main/plugin/x64/Imagine_Plugin_Archive_0.0.7_x64.zip"
   },
   {
-    "SearchPattern": "*SDI_*.7z",
+    "SearchPattern": "*SDI_*.zip",
     "DirectoryName": "drivers/SDI",
     "SoftwareName": "SDI",
     "DownloadUrl": "https://sdi-tool.org/download/"
@@ -165,14 +215,14 @@
   },
   {
     "SearchPattern": "*rufus-*p.exe",
-    "DirectoryName": "admin",
+    "DirectoryName": "admin/exe",
     "SoftwareName": "rufus",
     "DownloadUrl": "https://github.com/pbatard/rufus/releases/latest",
     "ExtractSingleExe": true
   },
   {
     "SearchPattern": "putty.exe",
-    "DirectoryName": "admin",
+    "DirectoryName": "admin/exe",
     "SoftwareName": "putty",
     "DownloadUrl": "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe",
     "ExtractSingleExe": true
@@ -222,7 +272,15 @@
     "DirectoryName": "by/platelschik_eaes",
     "SoftwareName": "platelschik_eaes",
     "DownloadUrl": "https://www.nalog.gov.by/software/arm-payer/",
-    "InstallArgs": "/verysilent /norestart"
+    "InstallArgs": "/verysilent /norestart",
+    "PostInstall": [
+      {
+        "Action": "Shortcut",
+        "From": "StartMenu",
+        "File": "Плательщик ЕАЭС*.lnk",
+        "Rename": "Плательщик ЕАЭС.lnk"
+      }
+    ]
   },
   {
     "SearchPattern": "*reduced_rate_nds_*.zip",
@@ -284,31 +342,31 @@
   },
   {
     "SearchPattern": "*Sophia.Script.for.Windows.10.LTSC*.zip",
-    "DirectoryName": "tweaks/sophia",
+    "DirectoryName": "admin/sophia",
     "SoftwareName": "sophia_script_10ltsc",
     "DownloadUrl": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
   },
   {
     "SearchPattern": "*Sophia.Script.for.Windows.10.PowerShell.7*.zip",
-    "DirectoryName": "tweaks/sophia",
+    "DirectoryName": "admin/sophia",
     "SoftwareName": "sophia_script_10ps7",
     "DownloadUrl": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
   },
   {
     "SearchPattern": "*Sophia.Script.for.Windows.11.PowerShell.7*.zip",
-    "DirectoryName": "tweaks/sophia",
+    "DirectoryName": "admin/sophia",
     "SoftwareName": "sophia_script_11ps7",
     "DownloadUrl": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
   },
   {
     "SearchPattern": "*Sophia.Script.Wrapper.*.zip",
-    "DirectoryName": "tweaks/sophia",
+    "DirectoryName": "admin/sophia",
     "SoftwareName": "sophia_script_wrapper",
     "DownloadUrl": "https://github.com/farag2/Sophia-Script-for-Windows/releases/latest"
   },
   {
     "SearchPattern": "*SophiApp.zip",
-    "DirectoryName": "tweaks/sophia",
+    "DirectoryName": "admin/sophia",
     "SoftwareName": "sophia_app",
     "DownloadUrl": "https://github.com/Sophia-Community/SophiApp/releases/latest"
   },
@@ -332,7 +390,7 @@
   },
   {
     "SearchPattern": "*install.exe",
-    "DirectoryName": "internet/onionfruit",
+    "DirectoryName": "other/vpn/onionfruit",
     "SoftwareName": "onionfruit",
     "DownloadUrl": "https://github.com/dragonfruitnetwork/onionfruit/releases/latest",
     "ExtractSingleExe": true
@@ -438,7 +496,7 @@
     "SearchPattern": "*psiphon*.exe",
     "DirectoryName": "other/vpn/psiphon",
     "SoftwareName": "psiphon",
-    "DownloadUrl": "https://psiphon.ca/ru/download-store.html",
+    "DownloadUrl": "https://psiphon.ca/psiphon3.exe",
     "ExtractSingleExe": true
   }
 ]

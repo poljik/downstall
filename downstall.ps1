@@ -32,10 +32,12 @@ param(
 DynamicParam {
     $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
     
-    $SoftwareSet = @()
-    foreach ($file in @("soft.json", "soft+.json")) {
-        if (Test-Path "$PSScriptRoot\$file") {
-            $SoftwareSet += (Get-Content "$PSScriptRoot\$file" -Raw | ConvertFrom-Json).SoftwareName
+    $Files = "soft.json", "soft+.json"
+    $SoftwareSet = foreach ($File in $Files) {
+        $FilePath = Join-Path $PSScriptRoot $File
+        if (Test-Path $FilePath) {
+            $Json = Get-Content $FilePath -Raw | ConvertFrom-Json
+            $Json.SoftwareName
         }
     }
 
@@ -66,6 +68,70 @@ begin {
     # HELPER FUNCTIONS
     # ==========================================
 
+    function Start-DownloadWithProgress {
+        param(
+            [Parameter(Mandatory = $true)] [string]$Uri,
+            [Parameter(Mandatory = $true)] [string]$OutFile,
+            [string]$SoftwareName = "File"
+        )
+
+        # Enable progress bar locally (active only within this function!)
+        $ProgressPreference = 'Continue' 
+
+        $WebClient = [System.Net.HttpWebRequest]::Create($Uri)
+        $WebClient.UserAgent = $Global:UserAgent
+        $WebClient.Timeout = 60000 
+        $WebClient.AllowAutoRedirect = $true
+
+        try {
+            $Response = $WebClient.GetResponse()
+            $TotalSize = $Response.ContentLength
+            $Stream = $Response.GetResponseStream()
+            
+            $FileStream = [System.IO.File]::Create($OutFile)
+            $Buffer = New-Object Byte[] 65536 # 64KB buffer
+            $TotalRead = 0
+            
+            $SwTotal = [System.Diagnostics.Stopwatch]::StartNew()
+            $SwUI = [System.Diagnostics.Stopwatch]::StartNew()
+
+            while (($BytesRead = $Stream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
+                $FileStream.Write($Buffer, 0, $BytesRead)
+                $TotalRead += $BytesRead
+                
+                # Refresh interface every 500 ms only
+                if ($SwUI.ElapsedMilliseconds -ge 500) {
+                    $TotalSeconds = $SwTotal.Elapsed.TotalSeconds
+                    $SpeedBps = $TotalRead / $TotalSeconds
+                    $SpeedMbs = "{0:N2}" -f ($SpeedBps / 1MB)
+                    
+                    $Percent = if ($TotalSize -gt 0) { [int](($TotalRead / $TotalSize) * 100) } else { 0 }
+                    $ReadMB = "{0:N1}" -f ($TotalRead / 1MB)
+                    $TotalMB = if ($TotalSize -gt 0) { "{0:N1}" -f ($TotalSize / 1MB) } else { "?" }
+                    
+                    $RemainingSeconds = if ($SpeedBps -gt 0 -and $TotalSize -gt 0) { [int](($TotalSize - $TotalRead) / $SpeedBps) } else { -1 }
+                    
+                    Write-Progress -Activity "Downloading $SoftwareName" `
+                        -Status "$ReadMB / $TotalMB MB ($Percent%) | Speed: $SpeedMbs MB/s" `
+                        -PercentComplete $Percent `
+                        -SecondsRemaining $RemainingSeconds
+                    
+                    $SwUI.Restart()
+                }
+            }
+
+            $FileStream.Close()
+            $Stream.Close()
+            $Response.Close()
+            Write-Progress -Activity "Downloading $SoftwareName" -Completed
+        }
+        catch {
+            if ($FileStream) { $FileStream.Close() }
+            Write-Warning "Download failed: $($_.Exception.Message)"
+            throw $_
+        }
+    }
+
     function Find-TargetDirectory {
         param ([String]$SearchPattern, [String]$DirectoryName)
         
@@ -89,129 +155,94 @@ begin {
     }
 
     function Test-FileUpdateRequired {
-    param (
-        [String]$LocalFilePath, 
-        [String]$DownloadUrl
-    )
+        param ([String]$LocalFilePath, [String]$DownloadUrl)
 
-    $LocalFile = Get-Item -Path $LocalFilePath -ErrorAction SilentlyContinue
-    if (-not $LocalFile) { return $true }
+        $LocalFile = Get-Item -Path $LocalFilePath -ErrorAction SilentlyContinue
+        if (-not $LocalFile) { return $true }
 
-    $OldSize = $LocalFile.Length
-    
-    $SkipCheck = if ($PSVersionTable.PSVersion.Major -ge 6) { @{ SkipCertificateCheck = $true } } else { @{} }
-    $CommonHeaders = @{ Referer = $DownloadUrl }
+        $OldSize = $LocalFile.Length
+        $SkipCheck = if ($PSVersionTable.PSVersion.Major -ge 6) { @{ SkipCertificateCheck = $true } } else { @{} }
+        $CommonHeaders = @{ Referer = $DownloadUrl }
 
-    # Attempt 1: HEAD request
-    try {
-        $WebResponse = Invoke-WebRequest -Uri $DownloadUrl -Method Head -Headers $CommonHeaders -UserAgent $Global:UserAgent @SkipCheck -ErrorAction Stop
-        $NewSize = $WebResponse.Headers.'Content-Length'
-    }
-    catch {
-        # Extract HTTP Status Code cross-platform (works in both PS 5.1 and PS 7+)
-        $StatusCode = $null
-        if ($_.Exception.Response) {
-            $StatusCode = [int]$_.Exception.Response.StatusCode # PS 5.1
-        } elseif ($null -ne $_.Exception.StatusCode) {
-            $StatusCode = [int]$_.Exception.StatusCode # PS 7+
+        # Attempt 1: HEAD request
+        try {
+            $WebResponse = Invoke-WebRequest -Uri $DownloadUrl -Method Head -Headers $CommonHeaders -UserAgent $Global:UserAgent @SkipCheck -ErrorAction Stop
+            $NewSize = $WebResponse.Headers.'Content-Length'
         }
+        catch {
+            # Extract HTTP Status Code cross-platform (works in both PS 5.1 and PS 7+)
+            $StatusCode = $null
+            if ($_.Exception.Response) { $StatusCode = [int]$_.Exception.Response.StatusCode } # PS 5.1
+            elseif ($null -ne $_.Exception.StatusCode) { $StatusCode = [int]$_.Exception.StatusCode } # PS 7+
 
-        # If it is an HTTP error (4xx or 5xx), the server might be blocking HEAD requests. Try GET fallback.
-        if ($StatusCode -match "^(4|5)\d\d$") {
-            Write-Warning "Test-FileUpdateRequired: HEAD failed for '$($LocalFile.Name)' (HTTP $StatusCode), trying GET..."
-            
-            try {
-                # IMPORTANT: Request only 1 byte to prevent downloading the entire file into RAM
-                $GetHeaders = $CommonHeaders.Clone()
-                $GetHeaders['Range'] = "bytes=0-0"
-                
-                $GetResponse = Invoke-WebRequest -Uri $DownloadUrl -Method Get -Headers $GetHeaders -UserAgent $Global:UserAgent @SkipCheck -MaximumRedirection 5 -ErrorAction Stop
-                
-                # A successful Range request returns HTTP 206 and a Content-Range header (e.g., "bytes 0-0/1234567")
-                if ($GetResponse.Headers.'Content-Range') {
-                    $NewSize = ($GetResponse.Headers.'Content-Range' -split '/')[-1]
-                } else {
-                    $NewSize = $GetResponse.Headers.'Content-Length'
+            # If it is an HTTP error (4xx or 5xx), the server might be blocking HEAD requests. Try GET fallback.
+            if ($StatusCode -match "^(4|5)\d\d$") {
+                Write-Warning "Test-FileUpdateRequired: HEAD failed for '$($LocalFile.Name)' (HTTP $StatusCode), trying GET..."
+                try {
+                    # IMPORTANT: Request only 1 byte to prevent downloading the entire file into RAM
+                    $GetHeaders = $CommonHeaders.Clone()
+                    $GetHeaders['Range'] = "bytes=0-0"
+                    $GetResponse = Invoke-WebRequest -Uri $DownloadUrl -Method Get -Headers $GetHeaders -UserAgent $Global:UserAgent @SkipCheck -MaximumRedirection 5 -ErrorAction Stop
+                    
+                    # A successful Range request returns HTTP 206 and a Content-Range header (e.g., "bytes 0-0/1234567")
+                    if ($GetResponse.Headers.'Content-Range') { $NewSize = ($GetResponse.Headers.'Content-Range' -split '/')[-1] } 
+                    else { $NewSize = $GetResponse.Headers.'Content-Length' }
+                }
+                catch {
+                    Write-Warning "Test-FileUpdateRequired: GET fallback failed: $($_.Exception.Message)"
+                    return $false 
                 }
             }
-            catch {
-                Write-Warning "Test-FileUpdateRequired: GET fallback failed: $($_.Exception.Message)"
-                return $false
+            else {
+                # Network error (Timeout, DNS resolution failure, offline)
+                Write-Warning "Test-FileUpdateRequired: Network error for '$($LocalFile.Name)': $($_.Exception.Message)"
+                Write-Warning "Skipping download - cannot verify file size."
+                return $false 
             }
-        } 
-        else {
-            # Network error (Timeout, DNS resolution failure, offline)
-            Write-Warning "Test-FileUpdateRequired: Network error for '$($LocalFile.Name)': $($_.Exception.Message)"
-            Write-Warning "Skipping download - cannot verify file size."
+        }
+
+        if ([string]::IsNullOrEmpty($NewSize)) {
+            Write-Warning "Test-FileUpdateRequired: Content-Length unknown for '$($LocalFile.Name)', skipping download."
+            return $false 
+        }
+
+        # IMPORTANT: Use [long] (Int64) to prevent overflow exceptions on files larger than 2GB
+        $NewSizeLong = if ($NewSize -is [Array]) { [long]$NewSize[0] } else { [long]$NewSize }
+
+        if ($OldSize -ge 1GB) { $FormattedOldSize = "{0:N2} GB" -f ($OldSize / 1GB) }
+        elseif ($OldSize -ge 1MB) { $FormattedOldSize = "{0:N2} MB" -f ($OldSize / 1MB) }
+        elseif ($OldSize -ge 1KB) { $FormattedOldSize = "{0:N2} KB" -f ($OldSize / 1KB) }
+        else { $FormattedOldSize = "$OldSize bytes" }
+
+        if (($OldSize -eq $NewSizeLong) -or ($NewSizeLong -eq 0)) {
+            Write-Host "Skip download '$($LocalFile.Name)' - Sizes match ($FormattedOldSize)."
             return $false
         }
-    }
 
-    if ([string]::IsNullOrEmpty($NewSize)) {
-        Write-Warning "Test-FileUpdateRequired: Content-Length unknown for '$($LocalFile.Name)', skipping download."
-        return $false
-    }
+        if ($NewSizeLong -ge 1GB) { $FormattedNewSizeLong = "{0:N2} GB" -f ($NewSizeLong / 1GB) }
+        elseif ($NewSizeLong -ge 1MB) { $FormattedNewSizeLong = "{0:N2} MB" -f ($NewSizeLong / 1MB) }
+        elseif ($NewSizeLong -ge 1KB) { $FormattedNewSizeLong = "{0:N2} KB" -f ($NewSizeLong / 1KB) }
+        else { $FormattedNewSizeLong = "$NewSizeLong bytes" }
 
-    # IMPORTANT: Use [long] (Int64) to prevent overflow exceptions on files larger than 2GB
-    $NewSizeLong = if ($NewSize -is [Array]) { [long]$NewSize[0] } else { [long]$NewSize }
-
-    if ($OldSize -ge 1GB) {
-        $FormattedOldSize = "{0:N2} GB" -f ($OldSize / 1GB)
+        Write-Host "Size mismatch: '$($SoftwareItem.SoftwareName)' - local=$FormattedOldSize, remote=$FormattedNewSizeLong. Download required."
+        return $true
     }
-    elseif ($OldSize -ge 1MB) {
-        $FormattedOldSize = "{0:N2} MB" -f ($OldSize / 1MB)
-    }
-    elseif ($OldSize -ge 1KB) {
-        $FormattedOldSize = "{0:N2} KB" -f ($OldSize / 1KB)
-    }
-    else {
-        $FormattedOldSize = "$OldSize bytes"
-    }
-
-    if (($OldSize -eq $NewSizeLong) -or ($NewSizeLong -eq 0)) {
-        Write-Host "Skip download '$($LocalFile.Name)' - Sizes match ($FormattedOldSize)."
-        return $false
-    }
-
-    if ($NewSizeLong -ge 1GB) {
-        $FormattedNewSizeLong = "{0:N2} GB" -f ($NewSizeLong / 1GB)
-    }
-    elseif ($NewSizeLong -ge 1MB) {
-        $FormattedNewSizeLong = "{0:N2} MB" -f ($NewSizeLong / 1MB)
-    }
-    elseif ($NewSizeLong -ge 1KB) {
-        $FormattedNewSizeLong = "{0:N2} KB" -f ($NewSizeLong / 1KB)
-    }
-    else {
-        $FormattedNewSizeLong = "$NewSizeLong bytes"
-    }
-
-    Write-Host "Size mismatch: '$($SoftwareItem.SoftwareName)' - local=$FormattedOldSize, remote=$FormattedNewSizeLong. Download required."
-    return $true
-}
 
     function Get-AbsoluteUri {
         param ([String]$DownloadUrl)
 
         $SkipCheck = if ($PSVersionTable.PSVersion.Major -ge 6) { @{ SkipCertificateCheck = $true } } else { @{} }
         try {
-            if ($PSVersionTable.PSVersion.Major -ge 6) {
-                $Response = Invoke-WebRequest -Uri $DownloadUrl -Method Head @SkipCheck -UserAgent $Global:UserAgent -ErrorAction Stop
-            } else {
-                $Response = Invoke-WebRequest -Uri $DownloadUrl -UserAgent $Global:UserAgent -ErrorAction Stop
-            }
+            if ($PSVersionTable.PSVersion.Major -ge 6) { $Response = Invoke-WebRequest -Uri $DownloadUrl -Method Head @SkipCheck -UserAgent $Global:UserAgent -ErrorAction Stop } 
+            else { $Response = Invoke-WebRequest -Uri $DownloadUrl -UserAgent $Global:UserAgent -ErrorAction Stop }
         }
         catch {
             Write-Warning "'$($SoftwareItem.SoftwareName)' - Error: $($_.Exception.Message)"   
-            return $null
+            return $null 
         }
         
         $ResolvedUrl = $Response.BaseResponse.RequestMessage.RequestUri.AbsoluteUri
-        if ($ResolvedUrl) {
-            return [string]$ResolvedUrl
-        } else {
-            return [string]$Response.BaseResponse.ResponseUri.AbsoluteUri
-        }
+        if ($ResolvedUrl) { return [string]$ResolvedUrl } else { return [string]$Response.BaseResponse.ResponseUri.AbsoluteUri }
     }
 
     function Invoke-Office365Setup {
@@ -221,144 +252,291 @@ begin {
 <Configuration>
   <Add OfficeClientEdition="64" Channel="Current">
     <Product ID="O365ProPlusRetail">
-    <Language ID="MatchOS" />
-    <Language ID="en-us" />
-    <ExcludeApp ID="Access" />
-    <ExcludeApp ID="Bing" />
-    <ExcludeApp ID="Groove" />
-    <ExcludeApp ID="Lync" />
-    <ExcludeApp ID="OneDrive" />
-    <ExcludeApp ID="OneNote" />
-    <ExcludeApp ID="Outlook" />
-    <ExcludeApp ID="Publisher" />
-    <ExcludeApp ID="Teams" />
-  </Product>
-  <Product ID="ProofingTools">
-    <Language ID="MatchOS" />
-    <Language ID="en-us" />
-  </Product>
-</Add>
-<Property Name="PinIconsToTaskbar" Value="FALSE" />
-<Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
-<Updates Enabled="TRUE" />
-<Display Level="Full" AcceptEULA="TRUE" />
-<Logging Level="Off" />
+      <Language ID="MatchOS" />
+      <Language ID="en-us" />
+      <ExcludeApp ID="Access" />
+      <ExcludeApp ID="Bing" />
+      <ExcludeApp ID="Groove" />
+      <ExcludeApp ID="Lync" />
+      <ExcludeApp ID="OneDrive" />
+      <ExcludeApp ID="OneNote" />
+      <ExcludeApp ID="Outlook" />
+      <ExcludeApp ID="Publisher" />
+      <ExcludeApp ID="Teams" />
+    </Product>
+    <Product ID="ProofingTools">
+      <Language ID="MatchOS" />
+      <Language ID="en-us" />
+    </Product>
+  </Add>
+  <Property Name="PinIconsToTaskbar" Value="FALSE" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+  <Updates Enabled="TRUE" />
+  <Display Level="Full" AcceptEULA="TRUE" />
+  <Logging Level="Off" />
 </Configuration>
 "@
-        $RootDirectory = $SetupDirectory | Split-Path -Parent | Split-Path -Parent
-        if (Test-Path "$RootDirectory\setup.exe") { return }
 
-        "HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\ExperimentConfigs\Ecs" | ForEach-Object {
-            $Null = New-Item -Path $_ -ItemType Directory -Force
-            Set-ItemProperty -Path $_ -Name CountryCode -Value "std::wstring|US" -Force
+        # Check if setup.exe already exists in the root directory
+        $RootDirectory = $SetupDirectory | Split-Path -Parent | Split-Path -Parent
+        if (Test-Path (Join-Path $RootDirectory "setup.exe")) { return }
+
+        # Configure Registry for Office Experiment Configs (ECS) to prevent setup issues
+        $RegPath = "HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\ExperimentConfigs\Ecs"
+        if (-not (Test-Path $RegPath)) { 
+            $Null = New-Item -Path $RegPath -ItemType Directory -Force 
         }
-  
-        if (-not (Test-Path $SetupDirectory)) { $Null = New-Item $SetupDirectory -ItemType Directory }
-        
+        Set-ItemProperty -Path $RegPath -Name CountryCode -Value "std::wstring|US" -Force
+
+        # Ensure the setup directory exists
+        if (-not (Test-Path $SetupDirectory)) { 
+            $Null = New-Item $SetupDirectory -ItemType Directory 
+        }
+
         Push-Location -Path $SetupDirectory
         try {
+            # 1. Scrape the Microsoft download page for the latest ODT link
             $WebResult = Invoke-WebRequest -Uri "https://www.microsoft.com/en-us/download/details.aspx?id=49117" -UseBasicParsing -UserAgent $Global:UserAgent
-            $DownloadUrl = ($WebResult.Links | Where-Object { $_.outerHTML -match "officedeploymenttoll" }).href
-            Invoke-WebRequest -Uri $DownloadUrl -OutFile "officedeploymenttool.exe" -UseBasicParsing -UserAgent $Global:UserAgent -Verbose
+    
+            # Filter links to find the direct .exe download URL
+            $DownloadUrl = $WebResult.Links | Where-Object { $_.href -like "*officedeploymenttool*.exe" } | Select-Object -ExpandProperty href -First 1
 
-            Start-Process -FilePath "officedeploymenttool.exe" -ArgumentList "/quiet /extract:officedeploymenttool" -Wait
+            if (-not $DownloadUrl) {
+                throw "Unable to find the Office Deployment Tool download link on the page."
+            }
 
-            Move-Item -Path "officedeploymenttool\setup.exe" -Destination "./" -Force
-            Start-Sleep -Seconds 1
-            Remove-Item -Path "officedeploymenttool*" -Recurse -Force
-            
-            $ConfigXmlPath = Join-Path -Path $SetupDirectory -ChildPath "config.xml"
-            Set-Content -Path $ConfigXmlPath -Value $ConfigXml
-            
-            Start-Process -FilePath "setup.exe" -ArgumentList "/download `"config.xml`"" -Wait
+            # 2. Download the tool
+            $ExePath = Join-Path $SetupDirectory "officedeploymenttool.exe"
+            Start-DownloadWithProgress -Uri $DownloadUrl -OutFile $ExePath -SoftwareName "Office Setup Tool"
+
+            # 3. Create a temp folder for extraction to avoid file conflicts
+            $ExtractPath = Join-Path $SetupDirectory "odt_temp_extract"
+            if (Test-Path $ExtractPath) { Remove-Item $ExtractPath -Recurse -Force }
+            $Null = New-Item -Path $ExtractPath -ItemType Directory
+    
+            # Extract the contents silently
+            Start-Process -FilePath $ExePath -ArgumentList "/quiet /extract:`"$ExtractPath`"" -Wait
+    
+            # Move only the necessary setup.exe to the main directory
+            $ExtractedSetup = Join-Path $ExtractPath "setup.exe"
+            if (Test-Path $ExtractedSetup) {
+                Move-Item -Path $ExtractedSetup -Destination $SetupDirectory -Force
+            }
+            else {
+                throw "Extraction failed: setup.exe not found in extracted files."
+            }
+    
+            # 4. Generate the config.xml and begin downloading Office installation bits
+            $ConfigXmlPath = Join-Path $SetupDirectory "config.xml"
+            Set-Content -Path $ConfigXmlPath -Value $ConfigXml -Encoding UTF8
+    
+            $SetupExePath = Join-Path $SetupDirectory "setup.exe"
+            Start-Process -FilePath $SetupExePath -ArgumentList "/download `"$ConfigXmlPath`"" -Wait
+        }
+        catch {
+            Write-Warning "Office ODT Setup Error: $($_.Exception.Message)"
         }
         finally {
+            # Cleanup: Remove installer and temp extraction folder
+            Get-ChildItem -Path $SetupDirectory -Filter "officedeploymenttool*" | Remove-Item -Recurse -Force
+            if (Test-Path $ExtractPath) { Remove-Item $ExtractPath -Recurse -Force }
             Pop-Location
         }
     }
 
-    function Install-SoftwarePackage {
+    # ==========================================
+    # INSTALLATION FUNCTIONS
+    # ==========================================
+
+    function Invoke-PostInstall {
         param (
-            [Parameter(Mandatory=$true)] [Object]$SoftwareItem,
-            [Parameter(Mandatory=$true)] [String]$FilePath,
-            [Parameter(Mandatory=$true)] [String]$FileName
+            [Parameter(Mandatory = $true)] [Object]$SoftwareItem,
+            [Parameter(Mandatory = $true)] [String]$DownloadDir,
+            [Parameter(Mandatory = $true)] [String]$FileName
         )
 
-        $FullFilePath = Join-Path -Path $FilePath -ChildPath $FileName
         $SoftwareName = $SoftwareItem.SoftwareName
-        Write-Warning "Install $SoftwareName"
+        $FullFilePath = Join-Path -Path $DownloadDir -ChildPath $FileName
 
+        if ($SoftwareItem.PostInstall) {
+            foreach ($Step in $SoftwareItem.PostInstall) {
+                switch ($Step.Action) {
+                    "Shortcut" {
+                        $Src = $null
+                        $retry = 0
+                        while (-not $Src -and $retry -lt 10) {
+                            if ($Step.From -eq "StartMenu") { 
+                                $Src = Get-ChildItem -Path "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs" -Filter $Step.File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+                            }
+                            else { 
+                                $Src = Get-Item -Path (Join-Path $DownloadDir $Step.File) -ErrorAction SilentlyContinue
+                            }
+                            if (-not $Src) { Start-Sleep -Seconds 1; $retry++ }
+                        }
+                        
+                        if ($Src) { 
+                            $DestName = if ($Step.Rename) { $Step.Rename } else { $Src.Name }
+                            Copy-Item $Src.FullName (Join-Path "$Env:PUBLIC\Desktop" $DestName) -Force 
+                        }
+                        else {
+                            Write-Warning "Invoke-PostInstall: Shortcut source '$($Step.File)' not found after 10 seconds."
+                        }
+                    }
+                    "Registry" {
+                        if (-not (Test-Path $Step.Path)) {
+                            $null = New-Item -Path $Step.Path -ItemType Directory -Force -ErrorAction SilentlyContinue
+                        }
+                        Set-ItemProperty -Path $Step.Path -Name $Step.Name -Value $Step.Value -Force
+                    }
+                    "Service" {
+                        $Step.Name | ForEach-Object {
+                            Set-Service $_ -StartupType $Step.State -ErrorAction SilentlyContinue
+                            if ($Step.Stop) { Stop-Service $_ -Force -ErrorAction SilentlyContinue }
+                        }
+                    }
+                    "Copy" {
+                        $DestinationPath = Invoke-Expression "`"$($Step.Dest)`""
+                        $FoundFiles = Get-ChildItem -Path $DownloadDir -Filter $Step.Source -Recurse -Force -ErrorAction SilentlyContinue
+                        
+                        if ($FoundFiles) {
+                            if (-not (Test-Path $DestinationPath)) {
+                                $null = New-Item -Path $DestinationPath -ItemType Directory -Force -ErrorAction SilentlyContinue
+                            }
+                            foreach ($File in $FoundFiles) {
+                                Copy-Item -Path $File.FullName -Destination $DestinationPath -Force -ErrorAction SilentlyContinue
+                            }
+                        }
+                    }
+                    "StopProcess" {
+                        $Step.Name | ForEach-Object {
+                            Get-Process -Name $_ -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+                        }
+                    }
+                    "Remove" {
+                        $RemovePath = Invoke-Expression "`"$($Step.Path)`""
+                        if (Test-Path $RemovePath) { Remove-Item -Path $RemovePath -Recurse -Force -ErrorAction SilentlyContinue }
+                    }
+                    "StartProcess" {
+                        Start-Process -FilePath $Step.FilePath -ArgumentList $Step.Arguments -Wait -ErrorAction SilentlyContinue
+                    }
+                }
+            }
+        }
         # Special Cases
         switch -Wildcard ($SoftwareName) {
-            "imagine_plugin_*" {
-                if ((Test-Path "$Env:Programfiles\WinRAR\Winrar.exe") -and (Test-Path "$Env:LOCALAPPDATA\Imagine\Plugin")) {
-                    Start-Process -FilePath "$Env:Programfiles\WinRAR\Winrar.exe" -ArgumentList "x -o+", "`"$FullFilePath`"", "$Env:LOCALAPPDATA\Imagine\Plugin" -WindowStyle Hidden
-                }
-                return
-            }
-            "mas" {
+            "mas" { 
                 $OsMajor = [System.Environment]::OSVersion.Version.Major
                 Write-Host "You have Windows $OsMajor"
                 if ($OsMajor -ge 10) {
                     Write-Host "KMS38 windows activation and Office Ohook activation"
                     & ([ScriptBlock]::Create((Invoke-RestMethod https://get.activated.win))) /KMS38 /Ohook
-                } else {
+                }
+                else {
                     Write-Host "KMS windows activation only"
                     & ([ScriptBlock]::Create((Invoke-RestMethod https://get.activated.win))) /KMS-WindowsOffice /KMS-RenewalTask
                 }
-                return
             }
             "office365" {
-                $SetupPath = $FilePath | Split-Path -Parent | Split-Path -Parent
-                Start-Process -FilePath "$SetupPath\setup.exe" -ArgumentList "/configure `"$SetupPath\config.xml`"" -Wait
-                return
+                $SetupPath = $DownloadDir | Split-Path -Parent | Split-Path -Parent 
+                Start-Process -FilePath (Join-Path $SetupPath "setup.exe") -ArgumentList "/configure `"$SetupPath\config.xml`"" -Wait
             }
             "office*" {
                 @("Word.lnk", "Excel.lnk", "Powerpoint.lnk") | ForEach-Object {
                     $ShortcutPath = "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\$_"
                     if (Test-Path $ShortcutPath) { Copy-Item -Path $ShortcutPath -Destination $Env:PUBLIC\Desktop -Force }
                 }
-                return
             }
-            "ventoy_linux" {
-                Write-Warning "$SoftwareName is just for Linux :)"
-                return
+            "true_image" {
+                Set-Service afcdpsrv, syncagentsrv -StartupType Disabled -PassThru -Confirm:$false -ErrorAction SilentlyContinue | Stop-Service > $null
             }
+            "total_commander" {
+                $Dest = if ($Script:SystemArchitecture -eq 64) { "${Env:Programfiles(x86)}\Total Commander" } else { "$Env:Programfiles\Total Commander" }
+                Get-ChildItem -Path $DownloadDir -Include wincmd.key, TOTALCMD*.EXE -Recurse -Force -ErrorAction Ignore | Copy-Item -Destination $Dest -Force
+            }
+            "viber" {
+                $retry = 0
+                while ((Get-Process | Where-Object Path -match "vibersetup" -ErrorAction SilentlyContinue) -and $retry -lt 60) { Start-Sleep -Seconds 1; $retry++ }
+                Get-Process | Where-Object Path -match "Viber" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            }
+            "imagine_plugin_*" {
+                $PluginDir = "$Env:LOCALAPPDATA\Imagine\Plugin"
+                if (-not (Test-Path $PluginDir)) { 
+                    $null = New-Item -ItemType Directory -Path $PluginDir -Force -ErrorAction SilentlyContinue 
+                }
+                Expand-Archive -Path $FullFilePath -DestinationPath $PluginDir -Force -ErrorAction SilentlyContinue
+            }
+            "ventoy_linux" { Write-Warning "$SoftwareName is just for Linux :)" }
             "platelschik_eaes_rate" {
                 $EaesPath = "${Env:ProgramFiles(x86)}\МНС\Плательщик ЕАЭС*\description"
-                if (Test-Path $EaesPath) { $SetupDir = Get-ChildItem -Path $EaesPath -Force }
-                elseif ($Found = Get-ChildItem -Path D:\* -Include $SoftwareItem.SetupPattern -Recurse -Force) { $SetupDir = $Found | Split-Path -Parent }
-                else { Write-Warning "Can't find platelschik_eaes directory"; return }
+                $SetupDir = $null
                 
-                Remove-Item "$SetupDir\reduced_rate_nds.stbl" -Force -ErrorAction Ignore
-                Remove-Item "$SetupDir\$($SoftwareItem.SetupPattern)" -Force
-                if (Test-Path "$Env:Programfiles\WinRAR\Winrar.exe") {
-                    Start-Process -FilePath "$Env:Programfiles\WinRAR\Winrar.exe" -ArgumentList "x -o+", "`"$FullFilePath`"", "`"$SetupDir`"" -WindowStyle Hidden
+                if (Test-Path $EaesPath) { $SetupDir = (Get-Item -Path $EaesPath -Force | Select-Object -First 1).FullName }
+                else {
+                    $SearchDrives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -ne "C:\" } | Select-Object -ExpandProperty Root
+                    foreach ($Drive in $SearchDrives) {
+                        if ($Found = Get-ChildItem -Path "$Drive*" -Include $SoftwareItem.SetupPattern -Recurse -Force -ErrorAction Ignore) {
+                            $SetupDir = $Found | Select-Object -First 1 | Split-Path -Parent; break
+                        }
+                    }
                 }
-                return
+
+                if ($SetupDir) {
+                    Remove-Item (Join-Path $SetupDir "reduced_rate_nds.stbl") -Force -ErrorAction Ignore
+                    Remove-Item (Join-Path $SetupDir $SoftwareItem.SetupPattern) -Force -ErrorAction Ignore
+
+                    Write-Host "Extracting Eaes rate update to $SetupDir..."
+                    Expand-Archive -Path $FullFilePath -DestinationPath $SetupDir -Force -ErrorAction SilentlyContinue
+                }
+                else { Write-Warning "Can't find platelschik_eaes directory for rate update." }
             }
             "rdpwrap_ini" {
-                $RdpPath = "$Env:ProgramFiles\RDP Wrapper\"
+                $RdpPath = "$Env:ProgramFiles\RDP Wrapper"
+                $SetupDir = $null
+
                 if (Test-Path $RdpPath) { $SetupDir = $RdpPath }
-                elseif ($Found = Get-ChildItem -Path D:\* -Directory -Recurse -Force | Where-Object { $_.Name -match "RDP Wrapper" }) { $SetupDir = $Found.FullName }
-                else { Write-Warning "Can't find RDPWrap directory"; return }
+                else {
+                    $SearchDrives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -ne "C:\" } | Select-Object -ExpandProperty Root
+                    foreach ($Drive in $SearchDrives) {
+                        if ($Found = Get-ChildItem -Path "$Drive*" -Directory -Recurse -Force -ErrorAction Ignore | Where-Object { $_.Name -match "RDP Wrapper" }) {
+                            $SetupDir = $Found.FullName | Select-Object -First 1; break
+                        }
+                    }
+                }
                 
-                Stop-Service TermService -Force
-                Remove-Item "$SetupDir\$($SoftwareItem.SearchPattern)" -Force
-                Move-Item -Path $FullFilePath -Destination $SetupDir -Force
-                Start-Service TermService
-                return
+                if ($SetupDir) {
+                    Stop-Service TermService -Force -ErrorAction SilentlyContinue
+                    Remove-Item (Join-Path $SetupDir $SoftwareItem.SearchPattern) -Force -ErrorAction SilentlyContinue
+                    Move-Item -Path $FullFilePath -Destination $SetupDir -Force -ErrorAction SilentlyContinue
+                    Start-Service TermService -ErrorAction SilentlyContinue
+                }
+                else { Write-Warning "Can't find RDPWrap directory." }
             }
         }
+    }
 
-        # Standard Installation
-        $BypassInstall = $false
-        if (Test-Path "$PSScriptRoot/downstall+.ps1") {
-            $BypassInstall = & "$PSScriptRoot/downstall+.ps1"
+    function Install-SoftwarePackage {
+        param (
+            [Parameter(Mandatory = $true)] [Object]$SoftwareItem,
+            [Parameter(Mandatory = $true)] [String]$FilePath,
+            [Parameter(Mandatory = $true)] [String]$FileName
+        )
+
+        $FullFilePath = Join-Path -Path $FilePath -ChildPath $FileName
+        $SoftwareName = $SoftwareItem.SoftwareName
+        Write-Warning "Install $SoftwareName"
+
+        $CustomInstallOnly = @("imagine_plugin_*", "mas", "office365", "office*", "ventoy_linux", "platelschik_eaes_rate", "rdpwrap_ini")
+        $BypassStandardInstall = $false
+        foreach ($pattern in $CustomInstallOnly) {
+            if ($SoftwareName -like $pattern) { $BypassStandardInstall = $true; break }
         }
 
-        if (-not $BypassInstall) {
-            $IsArchive = $FileName -match "\.(zip|7z|rar|gz)$"
+        if (Test-Path (Join-Path $PSScriptRoot "downstall+.ps1")) {
+            $BypassStandardInstall = & (Join-Path $PSScriptRoot "downstall+.ps1")
+        }
+
+        if (-not $BypassStandardInstall) {
+            $IsArchive = $FileName -match "\.(zip|7z|rar|gz|tgz|tar)$"
             $ExtractSingleExe = [bool]$SoftwareItem.ExtractSingleExe
 
             if ($IsArchive) {
@@ -366,8 +544,8 @@ begin {
                 $Extension = [System.IO.Path]::GetExtension($FileName).ToLower()
                 
                 # Determine extraction destination
-                $DestDir = if ($SoftwareItem.SetupPattern) {
-                    $TempDir = "$Env:Temp\temp_downstall_$($SoftwareItem.SoftwareName)"
+                $DestDir = if ($SoftwareItem.SetupPattern -or $ExtractSingleExe) {
+                    $TempDir = "$Env:Temp\temp_downstall_$SoftwareName"
                     $Null = New-Item -ItemType Directory -Force -Path $TempDir
                     $TempDir
                 }
@@ -380,159 +558,101 @@ begin {
                 # 1. EXTRACT BASED ON FORMAT
                 $ExtractSuccess = $false
                 switch -Regex ($Extension) {
-                    "\.zip$" {
+                    "\.zip$" { 
                         Write-Host "Extracting ZIP using built-in Expand-Archive..."
-                        Expand-Archive -Path $FullFilePath -DestinationPath $DestDir -Force
-                        $ExtractSuccess = $true
+                        Expand-Archive -Path $FullFilePath -DestinationPath $DestDir -Force -ErrorAction SilentlyContinue; $ExtractSuccess = $true 
                     }
-                    "\.(gz|tgz|tar)$" {
+                    "\.(gz|tgz|tar)$" { 
                         Write-Host "Extracting GZ/TAR using built-in Windows tar.exe..."
-                        Start-Process -FilePath "tar.exe" -ArgumentList "-xf `"$FullFilePath`" -C `"$DestDir`"" -Wait -NoNewWindow
-                        $ExtractSuccess = $true
+                        Start-Process -FilePath "tar.exe" -ArgumentList "-xf `"$FullFilePath`" -C `"$DestDir`"" -Wait -NoNewWindow -ErrorAction SilentlyContinue; $ExtractSuccess = $true 
                     }
                     "\.(rar|7z)$" {
                         # Look for WinRAR or 7-Zip (Windows 10 lacks native support for these formats)
                         $WinRarPath = "$Env:Programfiles\WinRAR\Winrar.exe"
                         $7zPath = "$Env:Programfiles\7-Zip\7z.exe"
-                        
                         if (Test-Path $WinRarPath) {
                             $WinRarArgs = if ($SoftwareItem.ArchiveArgs) { "x -o+ $($SoftwareItem.ArchiveArgs)" } else { "x -o+" }
-                            Start-Process -FilePath $WinRarPath -ArgumentList "$WinRarArgs `"$FullFilePath`" `"$DestDir`"" -WindowStyle Hidden -Wait
+                            Start-Process -FilePath $WinRarPath -ArgumentList "$WinRarArgs `"$FullFilePath`" `"$DestDir`"" -WindowStyle Hidden -Wait -ErrorAction SilentlyContinue
                             $ExtractSuccess = $true
                         }
                         elseif (Test-Path $7zPath) {
-                            Start-Process -FilePath $7zPath -ArgumentList "x `"$FullFilePath`" -o`"$DestDir`" -y" -WindowStyle Hidden -Wait
+                            Start-Process -FilePath $7zPath -ArgumentList "x `"$FullFilePath`" -o`"$DestDir`" -y" -WindowStyle Hidden -Wait -ErrorAction SilentlyContinue
                             $ExtractSuccess = $true
                         }
-                        else {
-                            Write-Warning "Cannot extract '$Extension'. Please install WinRAR or 7-Zip first! (Windows 10 lacks native support)."
-                        }
+                        else { Write-Warning "Cannot extract '$Extension'. Please install WinRAR or 7-Zip first! (Windows 10 lacks native support)." }
                     }
-                    default {
-                        Write-Warning "Unknown archive format: $Extension"
-                    }
+                    default { Write-Warning "Unknown archive format: $Extension" }
                 }
 
                 # 2. POST-EXTRACTION ACTIONS
-                if ($ExtractSuccess -and $SoftwareItem.SetupPattern) {
-                    $ExtractedItems = Get-ChildItem -Path "$DestDir\*" -Include $SoftwareItem.SetupPattern -Recurse -Force
-                    
-                    if ($ExtractedItems) {
-                        $TargetFile = $ExtractedItems | Select-Object -First 1
+                if ($ExtractSuccess) {
+                    if ($SoftwareItem.SetupPattern) {
+                        $ExtractedItems = Get-ChildItem -Path "$DestDir\*" -Include $SoftwareItem.SetupPattern -Recurse -Force
                         
-                        if ($ExtractSingleExe) {
-                            # If only extraction is needed (e.g., Portable version to Desktop)
-                            Copy-Item -Path $TargetFile.FullName -Destination "$Env:PUBLIC\Desktop" -Force
-                            Write-Host "Copied $($TargetFile.Name) to Desktop."
-                        }
-                        else {
-                            # Normal mode: run the installer
-                            $LaunchArgs = if ($SoftwareItem.InstallArgs) { $SoftwareItem.InstallArgs } else { "" }
-                            Start-Process -FilePath $TargetFile.FullName -ArgumentList $LaunchArgs -Wait
+                        if ($ExtractedItems) {
+                            $TargetFile = $ExtractedItems | Select-Object -First 1
                             
-                            # Specific action for Avest
-                            if ($SoftwareName -eq "avest") {
-                                $AvestSetup = Get-ChildItem -Path "$DestDir\*" -Include "setupAvCSPBel*.exe" -Recurse -Force | Select-Object -First 1
-                                if ($AvestSetup) { 
-                                    Start-Process -FilePath $AvestSetup.FullName -ArgumentList "/verysilent /devices=avToken,avPass,iKey" -Wait 
+                            if ($ExtractSingleExe) {
+                                # If only extraction is needed (e.g., Portable version to Desktop)
+                                Copy-Item -Path $TargetFile.FullName -Destination "$Env:PUBLIC\Desktop" -Force -ErrorAction SilentlyContinue
+                                Write-Host "Copied $($TargetFile.Name) to Desktop."
+                            }
+                            else {
+                                # Normal mode: run the installer
+                                $LaunchArgs = if ($SoftwareItem.InstallArgs) { $SoftwareItem.InstallArgs } else { "" }
+                                Start-Process -FilePath $TargetFile.FullName -ArgumentList $LaunchArgs -Wait -ErrorAction SilentlyContinue
+                                
+                                # Specific action for Avest
+                                if ($SoftwareName -eq "avest") {
+                                    $AvestSetup = Get-ChildItem -Path "$DestDir\*" -Include "setupAvCSPBel*.exe" -Recurse -Force | Select-Object -First 1
+                                    if ($AvestSetup) { Start-Process -FilePath $AvestSetup.FullName -ArgumentList "/verysilent /devices=avToken,avPass,iKey" -Wait -ErrorAction SilentlyContinue }
                                 }
                             }
                         }
+                        else { Write-Warning "Setup pattern '$($SoftwareItem.SetupPattern)' not found in extracted archive." }
                     }
-                    else {
-                        Write-Warning "Setup pattern '$($SoftwareItem.SetupPattern)' not found in extracted archive."
+                    elseif ($ExtractSingleExe) {
+                        $FirstExe = Get-ChildItem $DestDir -Filter "*.exe" -Recurse | Select-Object -First 1
+                        if ($FirstExe) { Copy-Item -Path $FirstExe.FullName -Destination "$Env:PUBLIC\Desktop" -Force -ErrorAction SilentlyContinue }
                     }
-                    
-                    # Clean up temp directory
-                    Remove-Item $DestDir -Recurse -Force
+
+                    if ($SoftwareItem.SetupPattern -or $ExtractSingleExe) {
+                        if (Test-Path $DestDir) { Remove-Item $DestDir -Recurse -Force -ErrorAction SilentlyContinue }
+                    }
                 }
-            }
-            elseif ($ExtractSingleExe) {
-                if (Test-Path $FullFilePath) { Copy-Item -Path $FullFilePath -Destination $Env:PUBLIC\Desktop -Force }
             }
             else {
-                # PROTECTION: Check for junk files (web pages instead of EXE)
-                if ($FileName -match "\.(php|html|htm)$") {
-                    Write-Warning "File '$FileName' appears to be a web page, not an installer. Download failed or blocked by server."
-                    return
-                }
-                
-                # PROTECTION: Strict check for the MZ magic bytes in executables
-                if ($FileName -match "\.exe$") {
-                    $Header = Get-Content -Path $FullFilePath -TotalCount 2 -Encoding Byte -ErrorAction SilentlyContinue
-                    if ($Header -and ($Header[0] -ne 77 -or $Header[1] -ne 90)) {
-                        # MZ = 77 90
-                        Write-Warning "File '$FileName' is not a valid executable (Missing MZ header). Download was corrupted or blocked by bot-protection."
-                        return
+                if ($ExtractSingleExe) {
+                    if (Test-Path $FullFilePath) { 
+                        Copy-Item -Path $FullFilePath -Destination $Env:PUBLIC\Desktop -Force -ErrorAction SilentlyContinue 
                     }
                 }
-
-                $LaunchArgs = if ($SoftwareItem.InstallArgs) { $SoftwareItem.InstallArgs } else { "" }
-                Start-Process -FilePath $FullFilePath -ArgumentList $LaunchArgs -Wait
-            }
-        }
-
-        # Post-Installation Actions
-        switch ($SoftwareName) {
-            "true_image" {
-                Set-Service afcdpsrv, syncagentsrv -StartupType Disabled -PassThru -Confirm:$false -ErrorAction SilentlyContinue | Stop-Service > $null
-            }
-            "total_commander" {
-                $Dest = if ($Script:SystemArchitecture -eq 64) { "${Env:Programfiles(x86)}\Total Commander" } else { "$Env:Programfiles\Total Commander" }
-                Get-ChildItem -Path $FilePath -Include wincmd.key, TOTALCMD*.EXE -Recurse -Force -ErrorAction Ignore | Copy-Item -Destination $Dest -Force
-            }
-            "far" {
-                $FarProfile = "$Env:APPDATA\Far Manager\Profile"
-                if ($LuaFile = Get-ChildItem -Path $FilePath -Include Panel.Esc.lua -Recurse -Force -ErrorAction Ignore) {
-                    $MacroPath = "$FarProfile\Macros\scripts\"
-                    $Null = New-Item -Path $MacroPath -ItemType Directory -Force
-                    Copy-Item -Path $LuaFile -Destination $MacroPath -Force
-                }
-                if ($DbFile = Get-ChildItem -Path $FilePath -Include generalconfig.db -Recurse -Force -ErrorAction Ignore) {
-                    $Null = New-Item -Path $FarProfile -ItemType Directory -Force
-                    Copy-Item -Path $DbFile -Destination $FarProfile -Force
-                }
-                
-                $BitSuffix = if ($Script:SystemArchitecture -eq 64) { " (x64)" } else { "" }
-                $ShortcutTarget = "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Far Manager 3$BitSuffix\Far Manager 3$BitSuffix.lnk"
-                
-                $retry = 0
-                while (-not (Test-Path $ShortcutTarget) -and $retry -lt 10) { Start-Sleep -Seconds 1; $retry++ }
-                if (Test-Path $ShortcutTarget) { Copy-Item -Path $ShortcutTarget -Destination $Env:PUBLIC\Desktop -Force }
-            }
-            "adobe_reader" {
-                $AcrobatShortcut = "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Adobe Acrobat.lnk"
-                if (Test-Path $AcrobatShortcut) { Copy-Item -Path $AcrobatShortcut -Destination $Env:PUBLIC\Desktop -Force }
-                $RegPath = "HKLM:\Software\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown"
-                $Null = New-Item -Path $RegPath -ItemType Directory -Force
-                Set-ItemProperty -Path $RegPath -Name bAcroSuppressUpsell -Value 1 -Force
-            }
-            "viber" {
-                $retry = 0
-                while ((Get-Process | Where-Object Path -match "vibersetup") -and $retry -lt 60) { Start-Sleep -Seconds 1; $retry++ }
-                Get-Process | Where-Object Path -match "Viber" | Stop-Process -Force
-            }
-            "winrar" {
-                if ((Test-Path "$Env:Programfiles\WinRAR\Winrar.exe") -and ($KeyFile = Get-ChildItem -Path $FilePath -Include "rarreg.key" -Recurse -Force -ErrorAction Ignore)) {
-                    Copy-Item $KeyFile "$Env:Programfiles\WinRAR" -Force
-                    $WinRarShortcut = "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\WinRAR\WinRAR.lnk"
-                    if (Test-Path $WinRarShortcut) { Copy-Item -Path $WinRarShortcut -Destination $Env:PUBLIC\Desktop -Force }
-                }
-            }
-            "edeclaration" {
-                $Target = "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\EDeclaration\Запустить EDeclaration.lnk"
-                if (Test-Path $Target) { 
-                    Copy-Item -Path $Target -Destination "$Env:PUBLIC\Desktop\EDeclaration.lnk" -Force 
-                }
-            }
-            "platelschik_eaes" {
-                $EaesShortcut = Get-ChildItem -Path "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\МНС\" -Include "Плательщик ЕАЭС*.lnk" -Recurse -ErrorAction Ignore | Select-Object -First 1
-                if ($EaesShortcut) {
-                    Copy-Item -Path $EaesShortcut.FullName -Destination "$Env:PUBLIC\Desktop\Плательщик ЕАЭС.lnk" -Force
+                else {
+                    # PROTECTION: Check for junk files (web pages instead of EXE)
+                    if ($FileName -match "\.(php|html|htm)$") { 
+                        Write-Warning "File '$FileName' appears to be a web page, not an installer. Download failed or blocked by server."
+                        return 
+                    }
+                    # PROTECTION: Strict check for the MZ magic bytes in executables
+                    if ($FileName -match "\.exe$") {
+                        $Header = Get-Content -Path $FullFilePath -TotalCount 2 -Encoding Byte -ErrorAction SilentlyContinue
+                        if ($Header -and ($Header[0] -ne 77 -or $Header[1] -ne 90)) { 
+                            Write-Warning "File '$FileName' is not a valid executable (Missing MZ header). Download was corrupted or blocked by bot-protection."
+                            return 
+                        }
+                    }
+                    $LaunchArgs = if ($SoftwareItem.InstallArgs) { $SoftwareItem.InstallArgs } else { "" }
+                    Start-Process -FilePath $FullFilePath -ArgumentList $LaunchArgs -Wait -ErrorAction SilentlyContinue
                 }
             }
         }
+
+        Invoke-PostInstall -SoftwareItem $SoftwareItem -DownloadDir $FilePath -FileName $FileName
     }
+
+    # ==========================================
+    # URL & DEPLOYMENT LOGIC
+    # ==========================================
 
     function Update-DynamicSoftwareUrls {
         param ([Array]$SoftwareArray, [Array]$ActiveInstalls)
@@ -554,17 +674,12 @@ begin {
                 "opera" {
                     $BaseUri = 'https://get.geo.opera.com/pub/opera/desktop/'
                     $Links = (Invoke-WebRequest -Uri $BaseUri -UseBasicParsing -UserAgent $Global:UserAgent).links.href
-    
-                    $LatestVer = @($Links | Where-Object { $_ -match "^\d+\.\d+\.\d+\.\d+/?$" }) | 
-                    Sort-Object -Property { [version]($_ -replace '/', '') } | 
-                    Select-Object -Last 1
-        
+                    $LatestVer = @($Links | Where-Object { $_ -match "^\d+\.\d+\.\d+\.\d+/?$" }) | Sort-Object -Property { [version]($_ -replace '/', '') } | Select-Object -Last 1
                     $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#operaUrl', "$BaseUri$LatestVer" + "win/")
                 }
                 { $_ -match "^softethervpn" } {
                     $BaseUri = 'http://www.softether-download.com'
                     $Links = (Invoke-WebRequest -Uri "$BaseUri/files/softether/" -UseBasicParsing -UserAgent $Global:UserAgent).links.href
-                    
                     # Filter RTM versions and sort them correctly by extracting the embedded date (YYYY.MM.DD)
                     $LatestNode = @($Links | Where-Object { $_ -match "v\d+\.\d+-\d+-rtm-(\d{4}\.\d{2}\.\d{2})-tree" }) | 
                     Sort-Object -Property { 
@@ -572,12 +687,8 @@ begin {
                         [datetime]::ParseExact($DateStr, "yyyy.MM.dd", $null) 
                     } | Select-Object -Last 1
 
-                    if ($Soft.SoftwareName -eq "softethervpn") {
-                        $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#softethervpnUrl', "$BaseUri$LatestNode" + "Windows/SoftEther_VPN_Client/")
-                    }
-                    else {
-                        $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#softethervpnServerUrl', "$BaseUri$LatestNode" + "Windows/SoftEther_VPN_Server_and_VPN_Bridge/")
-                    }
+                    if ($Soft.SoftwareName -eq "softethervpn") { $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#softethervpnUrl', "$BaseUri$LatestNode" + "Windows/SoftEther_VPN_Client/") }
+                    else { $Soft.DownloadUrl = $Soft.DownloadUrl.Replace('#softethervpnServerUrl', "$BaseUri$LatestNode" + "Windows/SoftEther_VPN_Server_and_VPN_Bridge/") }
                 }
             }
         }
@@ -682,15 +793,17 @@ begin {
                 }
             }
 
-            if ($SoftwareItem.SoftwareName -eq "platelschik_eaes" -and $DownloadLink) { $DownloadLink = [System.Uri]::EscapeDataString($DownloadLink) }
-
+            if ($SoftwareItem.SoftwareName -eq "platelschik_eaes" -and $DownloadLink) {
+                $DownloadLink = $DownloadLink.Replace(" ", "%20" )
+            }
+            
             # Download Logic
             if ($LinkFileName -and ($CurrentFileName -ne $LinkFileName -or (Test-FileUpdateRequired -LocalFilePath "$FilePath\$CurrentFileName" -DownloadUrl $DownloadLink))) {
                 Write-Warning "+$LinkFileName"
                 if (-not (Test-Path $FilePath)) { $Null = New-Item $FilePath -ItemType Directory }
 
                 try {
-                    Invoke-WebRequest -Uri $DownloadLink -OutFile "$FilePath\$LinkFileName" -Headers @{Referer = $DownloadLink } -UserAgent $Global:UserAgent -ErrorAction Stop
+                    Start-DownloadWithProgress -Uri $DownloadLink -OutFile (Join-Path $FilePath $LinkFileName) -SoftwareName $SoftwareItem.SoftwareName
                 }
                 catch {
                     Write-Warning "$CurrentFileName - Error: $($_.Exception.Message)"
@@ -699,16 +812,17 @@ begin {
 
                 if ($LinkFileName -and $CurrentFileName -and ($CurrentFileName -ne $LinkFileName)) {
                     Write-Warning "-$CurrentFileName deleted!"
-                    Remove-Item -Path "$FilePath\$CurrentFileName" -Force -Recurse
+                    Remove-Item -Path (Join-Path $FilePath $CurrentFileName) -Force -Recurse -ErrorAction SilentlyContinue
                 }
             }
         }
-
+        
         # Install Phase (With protection against empty filenames)
         if (-not $DownloadOnly) {
             if ([string]::IsNullOrWhiteSpace($LinkFileName)) {
                 Write-Warning "Skipping installation of '$($SoftwareItem.SoftwareName)': File not found locally and download failed/unavailable."
-            } else {
+            }
+            else {
                 Install-SoftwarePackage -SoftwareItem $SoftwareItem -FilePath $FilePath -FileName $LinkFileName
             }
         }
@@ -723,6 +837,8 @@ process {
  
     # Enforce TLS 1.2 for PS 5.1 compatibility with modern HTTPS servers
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    
+    # Disable default progress bars for all native commands
     $ProgressPreference = "SilentlyContinue"
 
     if ($DownloadOnly -and $InstallOnly) {
@@ -735,11 +851,17 @@ process {
         Write-Warning "Internet is missing, -InstallOnly activated"
     }
 
-    $SoftwareList = @()
-    if (Test-Path "$PSScriptRoot\soft.json") { $SoftwareList += Get-Content -Path "$PSScriptRoot\soft.json" | ConvertFrom-Json }
-    else { Write-Warning "soft.json is missing" }
+    $Files = "soft.json", "soft+.json"
+    $SoftwareList = foreach ($FileName in $Files) {
+        $FilePath = Join-Path $PSScriptRoot $FileName
     
-    if (Test-Path "$PSScriptRoot\soft+.json") { $SoftwareList += Get-Content -Path "$PSScriptRoot\soft+.json" | ConvertFrom-Json }
+        if (Test-Path $FilePath) {
+            Get-Content -Path $FilePath -Raw | ConvertFrom-Json
+        }
+        elseif ($FileName -eq "soft.json") { 
+            Write-Warning "$FileName is missing" 
+        }
+    }
 
     if (-not $InstallList) {
         $DownloadOnly = $true
