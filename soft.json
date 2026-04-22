@@ -193,7 +193,7 @@
     "DownloadUrl": "https://raw.githubusercontent.com/nyam1003/imagine/main/plugin/x64/Imagine_Plugin_Archive_0.0.7_x64.zip"
   },
   {
-    "SearchPattern": "*SDI_*.zip",
+    "SearchPattern": "*SDI_*.7z",
     "DirectoryName": "drivers/SDI",
     "SoftwareName": "SDI",
     "DownloadUrl": "https://sdi-tool.org/download/"
