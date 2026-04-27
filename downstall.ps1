@@ -176,6 +176,10 @@ begin {
         # Attempt 1: HEAD request
         try {
             $WebResponse = Invoke-WebRequest -Uri $DownloadUrl -Method Head -Headers $CommonHeaders -UserAgent $Global:UserAgent @SkipCheck -ErrorAction Stop
+            if ($WebResponse.Headers['Content-Type'] -match 'text/html') {
+                Write-Warning "Server returned HTML instead of file. Download skipped."
+                return $false
+            }
             $NewSize = $WebResponse.Headers.'Content-Length'
         }
         catch {
