@@ -196,20 +196,16 @@ begin {
 
   function Find-TargetDirectory {
     param ([String]$SearchPattern, [String]$DirectoryName)
-    $FoundFiles = Get-ChildItem -Path $PSScriptRoot -Include $SearchPattern -Recurse -Force -ErrorAction Ignore
+
+    $FoundFiles = @($Script:AllFiles | Where-Object { $_.Name -like $SearchPattern })
     if ($FoundFiles.Count -gt 0) {
       $TargetFile = $FoundFiles[0]
       $ResultFileName = $TargetFile.Name
-      $ResultFilePath = if ($TargetFile.Attributes -match 'Directory') {
-        $TargetFile.FullName
-      }
-      else {
-        $TargetFile.DirectoryName
-      }
+      $ResultFilePath = $TargetFile.DirectoryName
     }
     else {
       $ResultFileName = $Null
-      $FoundDirectories = Get-ChildItem -Path $PSScriptRoot -Include $DirectoryName -Recurse -Force -ErrorAction Ignore
+      $FoundDirectories = @($Script:AllDirs | Where-Object { $_.Name -like $DirectoryName })
       if ($FoundDirectories.Count -gt 0) {
         $ResultFilePath = $FoundDirectories[0].FullName
       }
@@ -396,8 +392,9 @@ begin {
 </Configuration>
 "@
     # Check if setup.exe already exists
-    if (Test-Path (Join-Path $SetupDirectory "setup.exe")) {
-      write-warning "Office Deployment Tool already exists in $SetupDirectory. Skipping download."
+    $RootDirectory = $SetupDirectory | Split-Path -Parent | Split-Path -Parent
+    if (Test-Path (Join-Path $RootDirectory "setup.exe")) {
+      write-warning "Office Deployment Tool already exists in $RootDirectory. Skipping download."
       return
     }
 
@@ -1060,6 +1057,11 @@ process {
     Write-Warning "ok, do nothing!"
     exit
   }
+
+  # One-time recursive scan of the whole script root, reused by every software item
+  # (avoids re-scanning the whole drive N times, once per software entry)
+  $Script:AllFiles = @(Get-ChildItem -Path $PSScriptRoot -Recurse -Force -File -ErrorAction Ignore)
+  $Script:AllDirs = @(Get-ChildItem -Path $PSScriptRoot -Recurse -Force -Directory -ErrorAction Ignore)
 
   $CheckDomain = if ($env:DOWNSTALL_CHECK_DOMAIN) {
     $env:DOWNSTALL_CHECK_DOMAIN

@@ -335,7 +335,7 @@
     "SearchPattern": "*VeraCrypt*Setup_x64*.msi",
     "DirectoryName": "other/soft/veracrypt",
     "SoftwareName": "veracrypt",
-    "DownloadUrl": "https://www.veracrypt.fr/en/Downloads.html",
+    "DownloadUrl": "https://veracrypt.io/en/Downloads.html",
     "InstallArgs": "/quiet /norestart ACCEPTLICENSE=YES"
   },
   {
