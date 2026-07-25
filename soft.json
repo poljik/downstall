@@ -1,5 +1,11 @@
 ﻿[
   {
+    "SearchPattern": "AvTunProxy-latest.exe",
+    "DirectoryName": "by/avtunproxy",
+    "SoftwareName": "avtunproxy",
+    "DownloadUrl": "https://avtunproxy.by/download/AvTunProxy-latest.exe"
+  },
+  {
     "SearchPattern": "*thorium_AVX2*mini_installer*.exe",
     "DirectoryName": "other/internet/thorium",
     "SoftwareName": "thorium",
@@ -17,6 +23,12 @@
     "DirectoryName": "soft/rdpwrap",
     "SoftwareName": "rdpwrap_ini",
     "DownloadUrl": "https://raw.githubusercontent.com/affinityv/INI-RDPWRAP/master/rdpwrap.ini"
+  },
+  {
+    "SearchPattern": "RDPW_Installer.exe",
+    "DirectoryName": "soft/rdpwrap_sobieski",
+    "SoftwareName": "rdpwrap_sobieski",
+    "DownloadUrl": "https://raw.githubusercontent.com/SobieskiCodes/RDPWrap/master/RDPW_Installer.exe"
   },
   {
     "SearchPattern": "ARDC*x64*.7z",
@@ -46,7 +58,7 @@
     "SoftwareName": "vvoddpu",
     "DownloadUrl": "https://ssf.gov.by/ru/po-fonda-ru/",
     "InstallArgs": "/S",
-    "SetupPattern": "vvoddpu-setup*.exe"
+    "SetupPattern": "vvoddpu-*setup*.exe"
   },
   {
     "SearchPattern": "total_commander_*litepack*.zip",
